@@ -58,16 +58,18 @@ copy_clipboard() {
     pbcopy <"$src_file"
     return
   fi
+  # これらのコマンドはクリップボードを保持するためバックグラウンドに残る。
+  # 継承した stdout/stderr を開いたままだと、パイプしたときに親が終わらない。
   if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy >/dev/null 2>&1; then
-    wl-copy <"$src_file"
+    wl-copy <"$src_file" >/dev/null 2>&1
     return
   fi
   if [[ -n "${DISPLAY:-}" ]] && command -v xclip >/dev/null 2>&1; then
-    xclip -selection clipboard -in <"$src_file"
+    xclip -selection clipboard -in <"$src_file" >/dev/null 2>&1
     return
   fi
   if [[ -n "${DISPLAY:-}" ]] && command -v xsel >/dev/null 2>&1; then
-    xsel --clipboard --input <"$src_file"
+    xsel --clipboard --input <"$src_file" >/dev/null 2>&1
     return
   fi
   echo "クリップボードにコピーできません。" >&2
