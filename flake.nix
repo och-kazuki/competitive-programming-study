@@ -29,17 +29,23 @@
         { pkgs }:
         {
           default = pkgs.mkShell {
-            packages = with pkgs; [
-              ac-library
-              clang-tools
-              gcc
-              just
-              python312
-              pyright
-              ruff
-              time
-              uv
-            ];
+            packages =
+              with pkgs;
+              [
+                ac-library
+                clang-tools
+                gcc
+                just
+                python312
+                pyright
+                ruff
+                time
+                uv
+              ]
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.wl-clipboard
+                pkgs.xclip
+              ];
 
             shellHook = ''
               # サブディレクトリから nix develop しても、リポジトリのルートを基準にする。

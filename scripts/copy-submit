@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# 展開した提出コードを、コンパイルできることを確認してからクリップボードへコピーする。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+target="${1:-.}"
+
+if [[ -d "$target" ]]; then
+  src="$target/a.cpp"
+elif [[ -f "$target" ]]; then
+  src="$target"
+else
+  echo "解答ファイルが見つかりません: $target" >&2
+  echo "ディレクトリか a.cpp を指定してください。" >&2
+  exit 1
+fi
+if [[ "$src" != /* ]]; then
+  src="$PWD/$src"
+fi
+if [[ ! -f "$src" ]]; then
+  echo "解答ファイルが見つかりません: $src" >&2
+  exit 1
+fi
+
+tmp=$(mktemp)
+bin_dir=$(mktemp -d)
+trap 'rm -rf "$tmp" "$bin_dir"' EXIT
+
+python3 "$root/scripts/bundle_cpp.py" -I "$root" "$src" >"$tmp"
+
+cxx=(g++ -std=gnu++20 -O2 -Wall -Wextra)
+if [[ -n "${AC_LIBRARY_INCLUDE:-}" ]]; then
+  cxx+=(-isystem "$AC_LIBRARY_INCLUDE")
+fi
+if ! "${cxx[@]}" -x c++ -o "$bin_dir/a.out" "$tmp"; then
+  echo "展開したコードがコンパイルできないため、クリップボードは変更していません。" >&2
+  exit 1
+fi
+
+copy_clipboard() {
+  local src_file="$1"
+  if [[ -n "${CP_CLIPBOARD_CMD:-}" ]]; then
+    "$CP_CLIPBOARD_CMD" <"$src_file"
+    return
+  fi
+  if [[ -e /dev/clipboard ]]; then
+    cat "$src_file" >/dev/clipboard
+    return
+  fi
+  if is_wsl && command -v powershell.exe >/dev/null 2>&1; then
+    # clip.exe は UTF-8 の日本語が文字化けする。標準入力のバイト列を UTF-8 として渡す。
+    powershell.exe -NoProfile -NonInteractive -Command \
+      '$ms = New-Object System.IO.MemoryStream; [Console]::OpenStandardInput().CopyTo($ms); $text = [System.Text.Encoding]::UTF8.GetString($ms.ToArray()); Set-Clipboard -Value $text' \
+      <"$src_file"
+    return
+  fi
+  if command -v pbcopy >/dev/null 2>&1; then
+    pbcopy <"$src_file"
+    return
+  fi
+  if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy >/dev/null 2>&1; then
+    wl-copy <"$src_file"
+    return
+  fi
+  if [[ -n "${DISPLAY:-}" ]] && command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard -in <"$src_file"
+    return
+  fi
+  if [[ -n "${DISPLAY:-}" ]] && command -v xsel >/dev/null 2>&1; then
+    xsel --clipboard --input <"$src_file"
+    return
+  fi
+  echo "クリップボードにコピーできません。" >&2
+  echo "使えるものが見つかりませんでした（MSYS2 の /dev/clipboard、WSL の powershell.exe、macOS の pbcopy、Wayland の wl-copy、X11 の xclip または xsel）。" >&2
+  echo "代わりに just submit-file で提出用ファイルを作れます。" >&2
+  exit 1
+}
+
+is_wsl() {
+  if [[ -n "${WSL_DISTRO_NAME:-}${WSL_INTEROP:-}" ]]; then
+    return 0
+  fi
+  [[ -r /proc/version ]] && grep -qi microsoft /proc/version
+}
+
+lines=$(awk 'END { print NR }' "$tmp")
+copy_clipboard "$tmp"
+echo "コピーしました（${lines}行）"

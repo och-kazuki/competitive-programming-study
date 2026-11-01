@@ -57,6 +57,16 @@ echo "== 問題ディレクトリで引数なし =="
     echo "提出ファイルにローカル include が残っています" >&2
     exit 1
   fi
+  printf -v expected_mode '%o' "$((0666 & ~8#$(umask)))"
+  if actual_mode=$(stat -c '%a' submit.cpp 2>/dev/null); then
+    :
+  else
+    actual_mode=$(stat -f '%OLp' submit.cpp)
+  fi
+  if [[ "$actual_mode" != "$expected_mode" ]]; then
+    echo "submit.cpp の権限が $actual_mode です（umask からは $expected_mode）" >&2
+    exit 1
+  fi
 )
 
 echo "== 親ディレクトリからの相対パス =="

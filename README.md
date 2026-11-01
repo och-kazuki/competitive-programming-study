@@ -29,16 +29,27 @@ cd work/abc400/a
 oj d https://atcoder.jp/contests/abc400/tasks/abc400_a
 runcpp
 just oj-cpp
-just submit-file
+just copy
 ```
 
 - `oj d <問題URL>` は、今いるディレクトリの `test/` にサンプルを保存します。
 - `runcpp` は、今いるディレクトリの `a.cpp` をコンパイルして実行します。入力はそのまま渡せます。
 - `just oj-cpp` は `test/` のサンプルで `a.cpp` を試します。Python なら `runpy` と `just oj-py` です。
-- `just submit-file` はヘッダを展開し、`work/abc400/a/submit.cpp` を作ります。これを提出します。
+- `just copy` はヘッダを展開し、コンパイルできることを確認してからクリップボードへコピーします。提出ページに貼り付けます。引数なしなら今いるディレクトリの `a.cpp` です。ファイルやフォルダも指定できます。
+- ファイルとして残すときは `just submit-file` です。`work/abc400/a/submit.cpp` ができます。
 - コンテスト後のメモは `notes/upsolve/abc400-a.md` に書きます。書き方は [notes/upsolve/README.md](notes/upsolve/README.md) です。
 
-VS Code と Cursor では、`a.cpp` または `a.py` を開いた状態でタスクを実行します。開いているファイルを実行するタスクと、そのフォルダの `a.cpp` / `a.py` を実行・テストするタスクがあります。サンプル取得はタスク「oj: サンプルを取得」に問題 URL を渡します。
+VS Code と Cursor では、`a.cpp` を開いてタスク「C++: 提出用コードをコピー」を実行すると、そのファイルをコピーします。実行やサンプルテストは、開いているファイルかそのフォルダが対象です。サンプル取得はタスク「oj: サンプルを取得」に問題 URL を渡します。
+
+キーバインドの例です。ユーザー設定の `keybindings.json` に足すと、`Ctrl+Alt+C` でコピーできます。
+
+```json
+{
+  "key": "ctrl+alt+c",
+  "command": "workbench.action.tasks.runTask",
+  "args": "C++: 提出用コードをコピー"
+}
+```
 
 ## セットアップ
 
@@ -161,15 +172,16 @@ just oj-py
 
 `oj d` は `test/sample-1.in` と `test/sample-1.out` のようなファイルを作ります。手で同じ名前のファイルを置いても同じです。タスク「oj: サンプルを取得」は問題 URL を聞いて、開いているファイルのフォルダに保存します。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」はそのフォルダをテストします。
 
-### 4. 提出用ファイルを作る
+### 4. 提出する
 
-C++ の解答は `library/cpp/template.hpp` を include しています。提出前に1ファイルへ展開します。
+C++ の解答は `library/cpp/template.hpp` を include しています。提出前に1ファイルへ展開してコピーします。
 
 ```sh
-just submit-file work/abc400/a
+cd work/abc400/a
+just copy
 ```
 
-`work/abc400/a/submit.cpp` ができます。中身は単体でコンパイルできます。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。AtCoder Library を使うときは `a.cpp` に次を書きます。
+展開結果がコンパイルできるときだけクリップボードを書き換え、「コピーしました（N行）」と表示します。失敗したときはクリップボードを変えません。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。AtCoder Library を使うときは `a.cpp` に次を書きます。
 
 ```cpp
 #include <atcoder/dsu>

@@ -93,6 +93,18 @@
       "problemMatcher": []
     },
     {
+      "label": "C++: 提出用コードをコピー",
+      "type": "shell",
+      "command": "just",
+      "args": ["copy", "${file}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "C++: 提出用ファイルを作る",
       "type": "shell",
       "command": "just",
