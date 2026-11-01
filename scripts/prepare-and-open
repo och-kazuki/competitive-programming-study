@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# VS Code / Cursor からコンテストを用意し、解答ファイルを開く。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+spec="${1:-}"
+if [[ -z "$spec" ]]; then
+  echo "コンテストを指定してください。例: 400 または 400 e または arc190" >&2
+  exit 1
+fi
+
+read -r -a parts <<<"$spec"
+if [[ "${parts[0]}" =~ ^[0-9]+$ ]]; then
+  args=(abc "${parts[@]}")
+else
+  args=("${parts[@]}")
+fi
+
+status=0
+dest="$("$root/scripts/prepare-contest" "${args[@]}")" || status=$?
+if [[ -z "$dest" || ! -f "$dest/a.cpp" ]]; then
+  exit "$status"
+fi
+
+if command -v cursor >/dev/null 2>&1; then
+  cursor -r "$dest/a.cpp" || true
+elif command -v code >/dev/null 2>&1; then
+  code -r "$dest/a.cpp" || true
+else
+  echo "code も cursor もないため、ファイルは開きません: $dest/a.cpp" >&2
+fi
+exit "$status"

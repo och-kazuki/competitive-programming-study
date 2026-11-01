@@ -85,11 +85,13 @@
               uv sync --frozen --project "$project_root"
               export PATH="$UV_PROJECT_ENVIRONMENT/bin:$project_root/scripts:$PATH"
               "$project_root/scripts/sync-dev-files"
+              . "$project_root/scripts/shell-functions.sh"
 
               echo "competitive-programming-study"
               echo "  root:   $project_root"
               echo "  C++:    g++ / clangd / AtCoder Library"
               echo "  Python: python / uv / pyright / ruff / oj"
+              echo "  移動:   abc 400 / abc 400 e / contest arc190"
               echo "  実行:   runcpp / runpy / just --list"
             '';
           };

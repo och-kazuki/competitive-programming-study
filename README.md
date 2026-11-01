@@ -6,40 +6,30 @@
 
 ## はじめての1問
 
-解答を書く場所は `work/<コンテスト>/<問題>/` です。次はコンテスト `abc400` の問題 `a` の例です。`nix develop` に入ってから実行します。
+`abc` はシェル関数です。`just` からは今のシェルのディレクトリを変えられないので、`just abc` ではなく `abc` と打ちます。`nix develop` に入ると使えます。
 
 ```sh
-just new abc400 a
+abc 400
 ```
 
-できるファイルは次のとおりです。
-
-| パス | 役割 |
-| --- | --- |
-| `work/abc400/a/a.cpp` | C++ の解答。ここだけ編集する |
-| `work/abc400/a/a.py` | Python の解答。ここだけ編集する |
-| `work/abc400/a/test/` | サンプル入出力を置く場所 |
-
-`a.cpp` は最初から `library/cpp/template.hpp` を include しています。`main` に解答を書きます。テンプレートの関数やマクロはヘッダ側にあり、解答ファイルでは変えません。
-
-`just oj-cpp` のように引数を省略すると、`just` を実行したディレクトリを見ます。相対パスを渡したときも、そのディレクトリからの相対パスです。
+ABC 400 の全問題を `work/abc400/` に作り、サンプルを取得して `work/abc400/a` に移動します。問題数は AtCoder の問題一覧から取るので、A から G までも Ex もそのまま揃います。解答は移動先の `a.cpp`（Python なら `a.py`）に書きます。`a.cpp` は `library/cpp/template.hpp` を include しています。
 
 ```sh
-cd work/abc400/a
-oj d https://atcoder.jp/contests/abc400/tasks/abc400_a
-runcpp
 just oj-cpp
 just copy
+abc 400 b
 ```
 
-- `oj d <問題URL>` は、今いるディレクトリの `test/` にサンプルを保存します。
-- `runcpp` は、今いるディレクトリの `a.cpp` をコンパイルして実行します。入力はそのまま渡せます。
-- `just oj-cpp` は `test/` のサンプルで `a.cpp` を試します。Python なら `runpy` と `just oj-py` です。
-- `just copy` はヘッダを展開し、コンパイルできることを確認してからクリップボードへコピーします。提出ページに貼り付けます。引数なしなら今いるディレクトリの `a.cpp` です。ファイルやフォルダも指定できます。
-- ファイルとして残すときは `just submit-file` です。`work/abc400/a/submit.cpp` ができます。
-- コンテスト後のメモは `notes/upsolve/abc400-a.md` に書きます。書き方は [notes/upsolve/README.md](notes/upsolve/README.md) です。
+- `just oj-cpp` は、今いるディレクトリの `test/` で `a.cpp` を試します。Python なら `just oj-py` です。
+- `just copy` は展開した提出コードをクリップボードへコピーします。ファイルに残すときは `just submit-file` です。
+- `abc 400 b` は B 問題へ移動します。既にサンプルがある問題は取り直さないので、すぐ終わります。
+- 既存の `a.cpp` は上書きしません。
+- ARC や AGC は `contest arc190`、`arc 190`、`agc 001 c` のようにします。
+- ネットにつながらないときや開始前は、その旨を出して、作れたフォルダだけ残します。
+- オフラインで1問だけ空のフォルダが欲しいときは `just new abc400 a` です。
+- コンテスト後のメモは `notes/upsolve/abc400-a.md` です。書き方は [notes/upsolve/README.md](notes/upsolve/README.md) です。
 
-VS Code と Cursor では、`a.cpp` を開いてタスク「C++: 提出用コードをコピー」を実行すると、そのファイルをコピーします。実行やサンプルテストは、開いているファイルかそのフォルダが対象です。サンプル取得はタスク「oj: サンプルを取得」に問題 URL を渡します。
+VS Code と Cursor では、タスク「コンテストを準備」に `400` や `400 e` を入れます。終わると `a.cpp` を開きます。提出は、開いているファイルに対するタスク「C++: 提出用コードをコピー」です。
 
 キーバインドの例です。ユーザー設定の `keybindings.json` に足すと、`Ctrl+Alt+C` でコピーできます。
 
@@ -102,6 +92,12 @@ nix profile install nixpkgs#direnv
 
 その後、使っているシェルに `eval "$(direnv hook bash)"`（zsh なら `zsh`）を追加します。
 
+`abc` はシェル関数です。direnv は関数を親シェルへ渡せないので、普段の bash（MSYS2 も含む）や zsh で使うときは、設定ファイルに次の1行を足します。パスはクローンした場所に合わせます。`nix develop` の中では shellHook が同じファイルを読むので、この行は無くても動きます。
+
+```sh
+source /path/to/competitive-programming-study/scripts/shell-functions.sh
+```
+
 Visual Studio Code と Cursor は `.vscode/` を読みます。推奨拡張機能は clangd、Python、Pyright、Ruff、direnv、Just です。direnv 拡張機能を有効にすると、統合ターミナルとタスクが `nix develop` と同じ環境になります。Cursor もこの設定を使います。
 
 clangd は `compile_flags.txt` を、Python は `.venv` と `pyproject.toml` の `[tool.pyright]` を見ます。言語サーバの起動方法はエディタ側の設定に任せ、このリポジトリには特定エディタ専用の init は置いていません。Neovim などを使う場合も、devShell に入った状態で clangd と pyright を自分の LSP から起動すれば同じ補完が使えます。
@@ -132,13 +128,13 @@ pyproject.toml      Python（uv）
 
 開発シェルに入っているか、direnv が有効な状態で進めます。
 
-### 1. 問題用のファイルを作る
+### 1. コンテストを用意する
 
 ```sh
-just new abc400 a
+abc 400
 ```
 
-解答は `work/abc400/a/a.cpp` と `work/abc400/a/a.py` です。サンプルは `work/abc400/a/test/` に置きます。このディレクトリは git の管理外です。コンテスト名と問題名には英数字、`_`、`-` が使えます。
+`work/abc400/a` に移動します。解答はそこにある `a.cpp` と `a.py` です。サンプルは `test/` に入っています。別の問題へ行くときは `abc 400 b` です。
 
 ### 2. 実行する
 
@@ -161,16 +157,14 @@ runpy work/abc400/a/a.py
 
 ### 3. サンプルをテストする
 
-問題ディレクトリでサンプルを取得します。
+`abc` がサンプルを取ったあと、問題ディレクトリで実行します。
 
 ```sh
-cd work/abc400/a
-oj d https://atcoder.jp/contests/abc400/tasks/abc400_a
 just oj-cpp
 just oj-py
 ```
 
-`oj d` は `test/sample-1.in` と `test/sample-1.out` のようなファイルを作ります。手で同じ名前のファイルを置いても同じです。タスク「oj: サンプルを取得」は問題 URL を聞いて、開いているファイルのフォルダに保存します。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」はそのフォルダをテストします。
+手で足すときは `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。
 
 ### 4. 提出する
 

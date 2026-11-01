@@ -78,13 +78,10 @@
       "problemMatcher": []
     },
     {
-      "label": "oj: サンプルを取得",
+      "label": "コンテストを準備",
       "type": "shell",
-      "command": "oj",
-      "args": ["d", "${input:problemUrl}"],
-      "options": {
-        "cwd": "${fileDirname}"
-      },
+      "command": "bash",
+      "args": ["${workspaceFolder}/scripts/prepare-and-open", "${input:contestSpec}"],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -117,17 +114,6 @@
       "problemMatcher": []
     },
     {
-      "label": "問題ファイルを作成",
-      "type": "shell",
-      "command": "just",
-      "args": ["new", "${input:contest}", "${input:problem}"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      },
-      "problemMatcher": []
-    },
-    {
       "label": "環境ファイルを更新",
       "type": "shell",
       "command": "just",
@@ -156,19 +142,9 @@
   ],
   "inputs": [
     {
-      "id": "contest",
+      "id": "contestSpec",
       "type": "promptString",
-      "description": "コンテスト名（例: abc400）"
-    },
-    {
-      "id": "problem",
-      "type": "promptString",
-      "description": "問題名（例: a）"
-    },
-    {
-      "id": "problemUrl",
-      "type": "promptString",
-      "description": "問題のURL"
+      "description": "コンテスト（例: 400、400 e、arc190）"
     }
   ]
 }
