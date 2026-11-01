@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "C++: ビルドして実行",
+      "label": "C++: 開いているファイルを実行",
       "type": "shell",
       "command": "runcpp",
       "args": ["${file}"],
@@ -18,10 +18,34 @@
       "problemMatcher": []
     },
     {
-      "label": "Python: 実行",
+      "label": "Python: 開いているファイルを実行",
       "type": "shell",
       "command": "runpy",
       "args": ["${file}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "C++: このフォルダの a.cpp を実行",
+      "type": "shell",
+      "command": "runcpp",
+      "args": ["${fileDirname}/a.cpp"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Python: このフォルダの a.py を実行",
+      "type": "shell",
+      "command": "runpy",
+      "args": ["${fileDirname}/a.py"],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -46,6 +70,33 @@
       "type": "shell",
       "command": "just",
       "args": ["oj-py", "${fileDirname}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "oj: サンプルを取得",
+      "type": "shell",
+      "command": "oj",
+      "args": ["d", "${input:problemUrl}"],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "C++: 提出用ファイルを作る",
+      "type": "shell",
+      "command": "just",
+      "args": ["submit-file", "${fileDirname}"],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -101,6 +152,11 @@
       "id": "problem",
       "type": "promptString",
       "description": "問題名（例: a）"
+    },
+    {
+      "id": "problemUrl",
+      "type": "promptString",
+      "description": "問題のURL"
     }
   ]
 }

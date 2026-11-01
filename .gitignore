@@ -23,5 +23,8 @@ compile_flags.txt
 # ルートに置いた実行ファイル
 /a
 
+# just submit-file が書く提出用ファイル
+submit.cpp
+
 # コンテスト中の作業ファイル。テンプレートから just new で作る。
 /work/
