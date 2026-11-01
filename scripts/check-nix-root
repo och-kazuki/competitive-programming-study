@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# サブディレクトリから nix develop しても、リポジトリのルートが基準になることを確認する。
+set -euo pipefail
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+if ! command -v nix >/dev/null 2>&1; then
+  echo "nix が見つかりません。nix develop 内で実行してください。" >&2
+  exit 1
+fi
+
+subdir="$CP_PROJECT_ROOT/work/nix-root-check/nested"
+rm -rf "$CP_PROJECT_ROOT/work/nix-root-check"
+mkdir -p "$subdir"
+trap 'rm -rf "$CP_PROJECT_ROOT/work/nix-root-check"' EXIT
+
+enter() {
+  local cwd="$1"
+  local flake="$2"
+  (
+    cd "$cwd"
+    nix develop "$flake" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUNCPP=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v runcpp)" "$CPLUS_INCLUDE_PATH"'
+  )
+}
+
+expect_root() {
+  local label="$1"
+  local out="$2"
+  local got
+  got=$(printf '%s\n' "$out" | awk -F= '/^ROOT=/{print $2}' | tail -n 1)
+  local venv
+  venv=$(printf '%s\n' "$out" | awk -F= '/^VENV=/{print $2}' | tail -n 1)
+  local runcpp
+  runcpp=$(printf '%s\n' "$out" | awk -F= '/^RUNCPP=/{print $2}' | tail -n 1)
+  local cplus
+  cplus=$(printf '%s\n' "$out" | awk -F= '/^CPLUS=/{print $2}' | tail -n 1)
+  if [[ "$got" != "$CP_PROJECT_ROOT" ]]; then
+    echo "$label: CP_PROJECT_ROOT が $got です" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  fi
+  if [[ "$venv" != "$CP_PROJECT_ROOT/.venv" ]]; then
+    echo "$label: .venv が $venv です" >&2
+    exit 1
+  fi
+  if [[ "$runcpp" != "$CP_PROJECT_ROOT/scripts/runcpp" ]]; then
+    echo "$label: runcpp が $runcpp です" >&2
+    exit 1
+  fi
+  case "$cplus" in
+  "$CP_PROJECT_ROOT":* | "$CP_PROJECT_ROOT") ;;
+  *)
+    echo "$label: CPLUS_INCLUDE_PATH がルートから始まっていません: $cplus" >&2
+    exit 1
+    ;;
+  esac
+  if [[ -e "$subdir/.venv" || -e "$subdir/compile_flags.txt" ]]; then
+    echo "$label: サブディレクトリに .venv か compile_flags.txt ができました" >&2
+    exit 1
+  fi
+}
+
+echo "== サブディレクトリから絶対パスで nix develop =="
+expect_root "absolute" "$(enter "$subdir" "$CP_PROJECT_ROOT")"
+
+echo "== サブディレクトリから相対パスで nix develop =="
+expect_root "relative" "$(enter "$subdir" "../../..")"
+
+echo "== git が使えないときは flake.nix をたどる =="
+expect_root "walk" "$(
+  cd "$subdir"
+  GIT_DIR=/nonexistent nix develop "$CP_PROJECT_ROOT" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUNCPP=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v runcpp)" "$CPLUS_INCLUDE_PATH"'
+)"

@@ -116,8 +116,8 @@ template <class T> T vec_sum(vector<T> &a) {
 // Grid
 int dx[4] = {1, -1, 0, 0}; // R, L, D, U
 int dy[4] = {0, 0, 1, -1}; // R, L, D, U
-// int dx[8] = {1, 1, 0, 0, -1, -1};
-// int dy[8] = {1, 0, -1, 1, 0, -1};
+// int dx[8] = {1, 1, 0, -1, -1, -1, 0, 1};
+// int dy[8] = {0, 1, 1, 1, 0, -1, -1, -1};
 bool out_grid(int y, int x, int h, int w) {
   return (!(0 <= y && y < h && 0 <= x && x < w));
 }
