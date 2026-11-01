@@ -1,0 +1,7 @@
+# インクルードパスは nix develop が生成する compile_flags.txt に書く。
+CompileFlags:
+  Add:
+    - -std=gnu++20
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

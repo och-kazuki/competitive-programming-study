@@ -1,0 +1,28 @@
+[project]
+name = "competitive-programming-study"
+version = "0.1.0"
+description = "競技プログラミングの学習環境"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "online-judge-tools>=11.5.1",
+    # oj 11.5.1 は Python 3.12 で削除された distutils を import する。
+    "setuptools>=84.2.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+extraPaths = ["library/python"]
+include = ["templates", "library/python", "tests/python", "tests/oj", "scripts/bundle_cpp.py"]

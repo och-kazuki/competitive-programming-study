@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "llvm-vs-code-extensions.vscode-clangd",
+    "ms-python.python",
+    "ms-pyright.pyright",
+    "charliermarsh.ruff",
+    "mkhl.direnv",
+    "nefrob.vscode-just-syntax"
+  ],
+  "unwantedRecommendations": ["ms-vscode.cpptools"]
+}

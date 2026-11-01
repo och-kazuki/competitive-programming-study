@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# g++ を、テンプレートとライブラリと AtCoder Library が見えるフラグで起動する。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+args=(-std=gnu++20 -O2 -Wall -Wextra -I"$root")
+if [[ -n "${AC_LIBRARY_INCLUDE:-}" ]]; then
+  args+=(-isystem "$AC_LIBRARY_INCLUDE")
+fi
+
+exec g++ "${args[@]}" "$@"
