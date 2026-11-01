@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# いまのディレクトリに、無いときだけ gen.py と naive.cpp を置く。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+dir="${1:-.}"
+dir=$(cd "$dir" && pwd)
+
+copy_if_missing() {
+  local name="$1"
+  local src="$root/templates/$name"
+  local dest="$dir/$name"
+  if [[ -e "$dest" ]]; then
+    echo "すでにあります: $dest"
+    return 0
+  fi
+  cp "$src" "$dest"
+  chmod u+w "$dest"
+  echo "置きました: $dest"
+}
+
+copy_if_missing gen.py
+copy_if_missing naive.cpp

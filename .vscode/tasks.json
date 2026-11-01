@@ -81,6 +81,35 @@
       "problemMatcher": []
     },
     {
+      "label": "ストレステスト",
+      "type": "shell",
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "stress", "${input:stressCount}"],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "ストレステストのひな形を置く",
+      "type": "shell",
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "stress-init"],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "oj: サンプルテスト (Python)",
       "type": "shell",
       "command": "nix",
@@ -185,6 +214,12 @@
       "id": "contestSpec",
       "type": "promptString",
       "description": "コンテスト（例: 400、400 e、arc190）"
+    },
+    {
+      "id": "stressCount",
+      "type": "promptString",
+      "description": "試行回数",
+      "default": "100"
     }
   ]
 }

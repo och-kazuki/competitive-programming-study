@@ -66,6 +66,9 @@ PY
 g++ -std=gnu++20 -O2 -Wall -Wextra -o "$tmpdir/bundled" "$bundled"
 "$tmpdir/bundled"
 
+echo "== ストレステスト =="
+bash "$CP_PROJECT_ROOT/scripts/check-stress"
+
 echo "== ruff =="
 export RUFF_CACHE_DIR="$tmpdir/ruff-cache"
 ruff check \

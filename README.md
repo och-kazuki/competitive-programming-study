@@ -161,6 +161,21 @@ just oj-py
 
 手で足すときは `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。
 
+### ストレステスト
+
+問題ディレクトリに生成器と愚直解を置くと、本解と出力を繰り返し比べられます。生成器は `gen.py` か `gen.cpp` で、引数にシードを受け取り、1ケースを標準出力へ書きます。愚直解は `naive.py` か `naive.cpp`、本解は `a.py` か `a.cpp` です。C++ と Python が両方あるときは C++ を使います。
+
+```sh
+just stress-init
+just stress 100
+```
+
+`just stress-init` は、無いときだけ `templates/gen.py` と `templates/naive.cpp` を今のディレクトリへコピーします。回数の既定は 100、1回の制限時間は 2 秒です。`CP_STRESS_TIMEOUT=1 just stress 50` のように変えられます。
+
+食い違ったときは `stress/<seed>.in`、`stress/<seed>.naive.out`、`stress/<seed>.sol.out` に入力と両方の出力を残し、愚直解の出力を `test/sample-N.out` として追加します。実行時エラーとタイムアウトでも止まり、入力を残します。愚直解が成功していれば、その入力と出力も `test/` に足すので、あとから `just oj-cpp` で同じケースを再実行できます。
+
+タスクは「ストレステスト」と「ストレステストのひな形を置く」です。
+
 ### 4. 提出する
 
 C++ の解答は `library/cpp/template.hpp` を include しています。提出前に1ファイルへ展開してコピーします。
