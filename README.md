@@ -2,13 +2,14 @@
 
 競技プログラミングの学習用環境です。Nix で C++ と Python を揃え、提出用テンプレート、コンテスト中の作業ファイル、ライブラリ、ノートを分けて扱います。
 
-対応 OS は Linux と macOS（x86_64 と aarch64）です。
+対応 OS は Linux と macOS（x86_64 と aarch64）です。Windows では WSL2 上の Linux で使います。手順は「Windows」を見てください。
 
 ## はじめての1問
 
-`abc` はシェル関数です。`just` からは今のシェルのディレクトリを変えられないので、`just abc` ではなく `abc` と打ちます。`nix develop` に入ると使えます。
+リポジトリで `nix develop` に入り、その中で進めます。`abc` はシェル関数です。`just` からは今のシェルのディレクトリを変えられないので、`just abc` ではなく `abc` と打ちます。
 
 ```sh
+nix develop
 abc 400
 ```
 
@@ -72,37 +73,31 @@ nix develop
 
 - C++: `g++`、`clangd`、`clang-format`、AtCoder Library
 - Python: `python`、`uv`、`pyright`、`ruff`、`oj`
-- 操作: `runcpp`、`runpy`、`just`
+- 操作: `runcpp`、`runpy`、`just`、`abc`
 
 `just` の一覧は `just --list` で見られます。
 
-### direnv とエディタ
+`nix develop` の外で `just` や `runcpp` などのスクリプトを実行すると、「先に nix develop を実行してください。」と出て止まります。コンパイルもテストも、この開発シェルの `g++` と `python` だけを使います。`abc` は、そのシェルが起動時に読み込む関数です。
 
-ルートの `.envrc` は `use flake` です。direnv を入れ、シェルの rc に hook を書いたあと、リポジトリで許可します。
+### Windows
 
-```sh
-direnv allow
-```
+Nix は Windows ネイティブでは動きません。Windows では WSL2 の Linux にリポジトリを置き、その中で `nix develop` を使います。MSYS2 のシェルでは使いません。
 
-`use flake` が使えない古い direnv なら、Nix で新しい direnv を入れます。
+Visual Studio Code と Cursor で開くときは、WSL 拡張機能で WSL 側のフォルダを開きます。Windows 側のパスのまま開くと、統合ターミナルの `nix develop` もタスクも失敗します。
 
-```sh
-nix profile install nixpkgs#direnv
-```
+### エディタ
 
-その後、使っているシェルに `eval "$(direnv hook bash)"`（zsh なら `zsh`）を追加します。
+Visual Studio Code と Cursor は `.vscode/` を読みます。推奨拡張機能は clangd、Python、Pyright、Ruff、Just です。
 
-`abc` はシェル関数です。direnv は関数を親シェルへ渡せないので、普段の bash（MSYS2 も含む）や zsh で使うときは、設定ファイルに次の1行を足します。パスはクローンした場所に合わせます。`nix develop` の中では shellHook が同じファイルを読むので、この行は無くても動きます。
+統合ターミナルの既定プロファイルは `nix develop` です。Linux と macOS（WSL のターミナルも Linux です）では `nix develop ${workspaceFolder}` を起動します。開いたターミナルの中で `abc 400` や `just oj-cpp` を実行します。
 
-```sh
-source /path/to/competitive-programming-study/scripts/shell-functions.sh
-```
+タスクは、ターミナルが開発シェルでなくても `nix develop ${workspaceFolder} -c ...` で実行します。開いているファイルの実行、サンプルテスト、コンテストの準備、提出用コピー、環境ファイルの更新、チェックが対象です。
 
-Visual Studio Code と Cursor は `.vscode/` を読みます。推奨拡張機能は clangd、Python、Pyright、Ruff、direnv、Just です。direnv 拡張機能を有効にすると、統合ターミナルとタスクが `nix develop` と同じ環境になります。Cursor もこの設定を使います。
+clangd 拡張の実行ファイルは `scripts/editor-clangd` です。このスクリプトが `nix develop --command clangd` を起動するので、手元の clangd は使いません。補完の元になる `compile_flags.txt` は、開発シェルに入ったときと `just sync` で作ります。AtCoder Library とこのリポジトリへのインクルードパスが入っています。Nix ストアの絶対パスを含むため、git では管理しません。
 
-clangd は `compile_flags.txt` を、Python は `.venv` と `pyproject.toml` の `[tool.pyright]` を見ます。言語サーバの起動方法はエディタ側の設定に任せ、このリポジトリには特定エディタ専用の init は置いていません。Neovim などを使う場合も、devShell に入った状態で clangd と pyright を自分の LSP から起動すれば同じ補完が使えます。
+Python のインタプリタは `.venv/bin/python` です。`.venv` は開発シェルに入ったときの `uv sync` で作られます。Pyright はこのインタプリタと `pyproject.toml` の `[tool.pyright]` を見ます。
 
-`compile_flags.txt` がまだ無いときは、タスク「環境ファイルを更新」か `just sync` を実行します。
+`compile_flags.txt` がまだ無いときは、ターミナルで一度 `nix develop` するか、タスク「環境ファイルを更新」を実行します。Neovim などを使う場合も、`nix develop` の中から clangd と pyright を起動します。
 
 ## ディレクトリ構成
 
@@ -126,7 +121,7 @@ pyproject.toml      Python（uv）
 
 ## 日々の使い方
 
-開発シェルに入っているか、direnv が有効な状態で進めます。
+`nix develop` の中で進めます。
 
 ### 1. コンテストを用意する
 

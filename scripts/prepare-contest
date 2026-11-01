@@ -3,6 +3,9 @@
 # 移動先の絶対パスだけを標準出力へ書く。経過は標準エラーへ書く。
 set -euo pipefail
 
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
 root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 usage() {

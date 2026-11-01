@@ -4,8 +4,11 @@
     {
       "label": "C++: 開いているファイルを実行",
       "type": "shell",
-      "command": "runcpp",
-      "args": ["${file}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "runcpp", "${file}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "group": {
         "kind": "build",
         "isDefault": true
@@ -20,8 +23,11 @@
     {
       "label": "Python: 開いているファイルを実行",
       "type": "shell",
-      "command": "runpy",
-      "args": ["${file}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "runpy", "${file}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -32,8 +38,11 @@
     {
       "label": "C++: このフォルダの a.cpp を実行",
       "type": "shell",
-      "command": "runcpp",
-      "args": ["${fileDirname}/a.cpp"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "runcpp", "${fileDirname}/a.cpp"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -44,8 +53,11 @@
     {
       "label": "Python: このフォルダの a.py を実行",
       "type": "shell",
-      "command": "runpy",
-      "args": ["${fileDirname}/a.py"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "runpy", "${fileDirname}/a.py"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -56,8 +68,11 @@
     {
       "label": "oj: サンプルテスト (C++)",
       "type": "shell",
-      "command": "just",
-      "args": ["oj-cpp", "${fileDirname}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "oj-cpp", "${fileDirname}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -68,8 +83,11 @@
     {
       "label": "oj: サンプルテスト (Python)",
       "type": "shell",
-      "command": "just",
-      "args": ["oj-py", "${fileDirname}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "oj-py", "${fileDirname}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -80,8 +98,18 @@
     {
       "label": "コンテストを準備",
       "type": "shell",
-      "command": "bash",
-      "args": ["${workspaceFolder}/scripts/prepare-and-open", "${input:contestSpec}"],
+      "command": "nix",
+      "args": [
+        "develop",
+        "${workspaceFolder}",
+        "-c",
+        "bash",
+        "${workspaceFolder}/scripts/prepare-and-open",
+        "${input:contestSpec}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -92,8 +120,11 @@
     {
       "label": "C++: 提出用コードをコピー",
       "type": "shell",
-      "command": "just",
-      "args": ["copy", "${file}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "copy", "${file}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -104,8 +135,11 @@
     {
       "label": "C++: 提出用ファイルを作る",
       "type": "shell",
-      "command": "just",
-      "args": ["submit-file", "${fileDirname}"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "submit-file", "${fileDirname}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -116,8 +150,11 @@
     {
       "label": "環境ファイルを更新",
       "type": "shell",
-      "command": "just",
-      "args": ["sync"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "sync"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"
@@ -127,8 +164,11 @@
     {
       "label": "チェック",
       "type": "shell",
-      "command": "just",
-      "args": ["check"],
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "check"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "group": {
         "kind": "test",
         "isDefault": true

@@ -2,6 +2,9 @@
 # templates からコンテスト用の作業ディレクトリを作る。
 set -euo pipefail
 
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
 if [[ $# -ne 2 ]]; then
   echo "使い方: new-problem <コンテスト> <問題>" >&2
   echo "例:     just new abc400 a" >&2

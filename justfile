@@ -37,6 +37,7 @@ oj-py dir=".":
 # 引用符の include を展開して標準出力へ出す。
 [no-cd]
 bundle src:
+    "{{root}}/scripts/require-dev-shell"
     python3 "{{root}}/scripts/bundle_cpp.py" -I "{{root}}" "{{src}}"
 
 # 問題ディレクトリの a.cpp を展開し submit.cpp を書く。
@@ -57,4 +58,5 @@ check:
     "{{root}}/scripts/check-nix-root"
     "{{root}}/scripts/check-copy"
     "{{root}}/scripts/check-contest"
+    "{{root}}/scripts/check-outside"
     pyright

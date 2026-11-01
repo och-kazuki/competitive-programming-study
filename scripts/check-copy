@@ -2,6 +2,9 @@
 # 偽物のクリップボードコマンドで、展開結果の受け渡しと失敗時の非更新を確認する。
 set -euo pipefail
 
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
 if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
   CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 fi

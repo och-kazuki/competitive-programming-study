@@ -29,7 +29,7 @@
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
-  "clangd.path": "clangd",
+  "clangd.path": "${workspaceFolder}/scripts/editor-clangd",
   "clangd.checkUpdates": false,
   "clangd.arguments": [
     "--background-index",
@@ -37,14 +37,25 @@
     "--query-driver=**/g++"
   ],
   "C_Cpp.intelliSenseEngine": "disabled",
-  "direnv.restart.automatic": true,
+  "terminal.integrated.profiles.linux": {
+    "nix develop": {
+      "path": "nix",
+      "args": ["develop", "${workspaceFolder}"]
+    }
+  },
+  "terminal.integrated.profiles.osx": {
+    "nix develop": {
+      "path": "nix",
+      "args": ["develop", "${workspaceFolder}"]
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "nix develop",
+  "terminal.integrated.defaultProfile.osx": "nix develop",
   "search.exclude": {
-    "**/.direnv": true,
     "**/.venv": true,
     "**/work": true
   },
   "files.watcherExclude": {
-    "**/.direnv/**": true,
     "**/.venv/**": true
   }
 }

@@ -2,6 +2,9 @@
 # 展開した提出コードを、コンパイルできることを確認してからクリップボードへコピーする。
 set -euo pipefail
 
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
 root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 target="${1:-.}"
 
