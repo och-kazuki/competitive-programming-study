@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# oj の更新確認が PyPI へ出ないよう、一時キャッシュの親ディレクトリを標準出力する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+dir=$(mktemp -d)
+XDG_CACHE_HOME="$dir" python3 - <<'PY'
+import json
+import os
+import time
+from pathlib import Path
+
+import onlinejudge.__about__ as api
+import onlinejudge_command.__about__ as cmd
+
+cache = Path(os.environ["XDG_CACHE_HOME"]) / "online-judge-tools"
+cache.mkdir(parents=True, exist_ok=True)
+now = int(time.time())
+data = {
+    cmd.__package_name__: {"time": now, "version": cmd.__version__},
+    api.__package_name__: {"time": now, "version": api.__version__},
+}
+(cache / "pypi.json").write_text(json.dumps(data), encoding="utf-8")
+PY
+printf '%s\n' "$dir"
