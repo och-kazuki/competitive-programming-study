@@ -4,6 +4,40 @@
 
 対応 OS は Linux と macOS（x86_64 と aarch64）です。
 
+## はじめての1問
+
+解答を書く場所は `work/<コンテスト>/<問題>/` です。次はコンテスト `abc400` の問題 `a` の例です。`nix develop` に入ってから実行します。
+
+```sh
+just new abc400 a
+```
+
+できるファイルは次のとおりです。
+
+| パス | 役割 |
+| --- | --- |
+| `work/abc400/a/a.cpp` | C++ の解答。ここだけ編集する |
+| `work/abc400/a/a.py` | Python の解答。ここだけ編集する |
+| `work/abc400/a/test/` | サンプル入出力を置く場所 |
+
+`a.cpp` は最初から `library/cpp/template.hpp` を include しています。`main` に解答を書きます。テンプレートの関数やマクロはヘッダ側にあり、解答ファイルでは変えません。
+
+```sh
+cd work/abc400/a
+oj d https://atcoder.jp/contests/abc400/tasks/abc400_a
+runcpp
+just oj-cpp
+just submit-file
+```
+
+- `oj d <問題URL>` は、今いるディレクトリの `test/` にサンプルを保存します。
+- `runcpp` は、今いるディレクトリの `a.cpp` をコンパイルして実行します。入力はそのまま渡せます。
+- `just oj-cpp` は `test/` のサンプルで `a.cpp` を試します。Python なら `runpy` と `just oj-py` です。
+- `just submit-file` はヘッダを展開し、`work/abc400/a/submit.cpp` を作ります。これを提出します。
+- コンテスト後のメモは `notes/upsolve/abc400-a.md` に書きます。書き方は [notes/upsolve/README.md](notes/upsolve/README.md) です。
+
+VS Code と Cursor では、`a.cpp` または `a.py` を開いた状態でタスクを実行します。開いているファイルを実行するタスクと、そのフォルダの `a.cpp` / `a.py` を実行・テストするタスクがあります。サンプル取得はタスク「oj: サンプルを取得」に問題 URL を渡します。
+
 ## セットアップ
 
 ### Nix を入れる
@@ -64,9 +98,10 @@ clangd は `compile_flags.txt` を、Python は `.venv` と `pyproject.toml` の
 ## ディレクトリ構成
 
 ```text
-templates/          提出用テンプレート（a.cpp と a.py）
+templates/a.cpp     新しい問題へコピーされる C++ の解答ファイル
+templates/a.py      新しい問題へコピーされる Python の解答ファイル
 work/               コンテスト中の作業場所（git 管理外）
-library/cpp/        C++ ヘッダ
+library/cpp/        C++ ヘッダ。共通部分は template.hpp
 library/python/     Python モジュール
 tests/              ライブラリテストと oj の動作確認
 notes/upsolve/      問題ごとのメモ
@@ -90,11 +125,11 @@ pyproject.toml      Python（uv）
 just new abc400 a
 ```
 
-`work/abc400/a/` に `a.cpp`、`a.py`、空の `test/` ができます。ここは git の管理外です。コンテスト名と問題名には英数字、`_`、`-` が使えます。
+解答は `work/abc400/a/a.cpp` と `work/abc400/a/a.py` です。サンプルは `work/abc400/a/test/` に置きます。このディレクトリは git の管理外です。コンテスト名と問題名には英数字、`_`、`-` が使えます。
 
 ### 2. 実行する
 
-問題ディレクトリでは、引数なしでその場のファイルをコンパイルして実行します。
+問題ディレクトリでは、引数なしでその場の `a.cpp` / `a.py` を実行します。
 
 ```sh
 cd work/abc400/a
@@ -102,20 +137,18 @@ runcpp
 runpy
 ```
 
-カレントに `a.cpp` / `a.py` が無いときは `templates/` のテンプレートを実行します。ファイルを直接渡すこともできます。
+ファイルを直接渡すこともできます。
 
 ```sh
 runcpp work/abc400/a/a.cpp
 runpy work/abc400/a/a.py
 ```
 
-`just runcpp` と `just runpy` も同じスクリプトです。標準入力はそのままプログラムへ渡ります。
-
-エディタではタスク「C++: ビルドして実行」「Python: 実行」が、開いているファイルを対象にします。
+標準入力はそのままプログラムへ渡ります。エディタでは、開いているファイル向けのタスクと、そのフォルダの `a.cpp` / `a.py` 向けのタスクがあります。
 
 ### 3. サンプルをテストする
 
-問題ディレクトリでサンプルを置きます。取得できる問題なら `oj d` を使います。
+問題ディレクトリでサンプルを取得します。
 
 ```sh
 cd work/abc400/a
@@ -124,42 +157,28 @@ just oj-cpp
 just oj-py
 ```
 
-手で置く場合は `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのディレクトリをテストします。
+`oj d` は `test/sample-1.in` と `test/sample-1.out` のようなファイルを作ります。手で同じ名前のファイルを置いても同じです。タスク「oj: サンプルを取得」は問題 URL を聞いて、開いているファイルのフォルダに保存します。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」はそのフォルダをテストします。
 
-### 4. ライブラリを使って提出する
+### 4. 提出用ファイルを作る
 
-C++ ではリポジトリルートがインクルードパスに入っています。
+C++ の解答は `library/cpp/template.hpp` を include しています。提出前に1ファイルへ展開します。
 
-```cpp
-#include "library/cpp/binary_search.hpp"
+```sh
+just submit-file work/abc400/a
 ```
 
-AtCoder Library は次の形です。
+`work/abc400/a/submit.cpp` ができます。中身は単体でコンパイルできます。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。AtCoder Library を使うときは `a.cpp` に次を書きます。
 
 ```cpp
 #include <atcoder/dsu>
 ```
 
-提出前に、引用符の include を1ファイルへ展開します。
-
-```sh
-just bundle work/abc400/a/a.cpp > /tmp/submit.cpp
-```
-
-`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。PyPI の online-judge-tools には `oj-bundle` が無いので、同じ役割の展開を `just bundle` で行います。詳細は [library/cpp/README.md](library/cpp/README.md) を見てください。
-
-Python は `library/python` を import できます。
-
-```python
-from binary_search import binary_search_min
-```
-
-Python の提出は1ファイルなので、使った関数を提出ファイルへコピーします。
+詳細は [library/cpp/README.md](library/cpp/README.md) です。Python は1ファイルで提出するので、使った関数を `a.py` にコピーします。追加モジュールの置き方は [library/python/README.md](library/python/README.md) です。
 
 ### 5. ノートを書く
 
-- 問題の振り返りは `notes/upsolve/`。書き方は [notes/upsolve/README.md](notes/upsolve/README.md)、記入例は [notes/upsolve/example.md](notes/upsolve/example.md)。
-- アルゴリズムの説明は `notes/algorithms/`。書き方は [notes/algorithms/README.md](notes/algorithms/README.md)、記入例は [notes/algorithms/binary-search.md](notes/algorithms/binary-search.md)。
+- 問題の振り返りは `notes/upsolve/abc400-a.md` のように置きます。書き方は [notes/upsolve/README.md](notes/upsolve/README.md)、記入例は [notes/upsolve/example.md](notes/upsolve/example.md) です。
+- アルゴリズムの説明は `notes/algorithms/` です。書き方は [notes/algorithms/README.md](notes/algorithms/README.md) です。
 
 ### 6. 変更を確認する
 

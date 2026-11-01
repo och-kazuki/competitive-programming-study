@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# 問題ディレクトリの a.cpp を展開し、同じディレクトリへ submit.cpp を書く。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+dir="${1:-.}"
+dir=$(cd "$dir" && pwd)
+
+if [[ ! -f "$dir/a.cpp" ]]; then
+  echo "a.cpp がありません: $dir" >&2
+  exit 1
+fi
+
+python3 "$root/scripts/bundle_cpp.py" -I "$root" "$dir/a.cpp" >"$dir/submit.cpp"
+echo "$dir/submit.cpp"

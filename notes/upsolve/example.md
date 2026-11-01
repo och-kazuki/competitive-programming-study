@@ -24,4 +24,4 @@
 
 ## 関連ライブラリ
 
-なし。偶奇の判定だけなので `library/cpp/binary_search.hpp` は使わない。
+なし。

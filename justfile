@@ -34,6 +34,10 @@ oj-py dir=".":
 bundle src:
     python3 "{{root}}/scripts/bundle_cpp.py" -I "{{root}}" "{{src}}"
 
+# 問題ディレクトリの a.cpp を展開し submit.cpp を書く
+submit-file dir=".":
+    "{{root}}/scripts/submit-file" "{{dir}}"
+
 # テンプレート、ライブラリ、ruff、oj、pyright を確認する
 check:
     "{{root}}/scripts/check"
