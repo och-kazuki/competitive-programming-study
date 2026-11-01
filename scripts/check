@@ -21,6 +21,9 @@ echo "== C++ テンプレート =="
 bash "$cxx" -o "$tmpdir/template" "$CP_PROJECT_ROOT/templates/a.cpp"
 "$tmpdir/template"
 
+echo "== C++ テンプレート詳細 =="
+bash "$CP_PROJECT_ROOT/scripts/check-template"
+
 echo "== C++ ライブラリテスト =="
 shopt -s nullglob
 tests=("$CP_PROJECT_ROOT"/tests/cpp/*.cpp)
@@ -54,7 +57,7 @@ import sys
 text = open(sys.argv[1], encoding="utf-8").read()
 if '#include "library/' in text:
     sys.exit("ローカル include が残っています")
-if "template <class T> inline bool chmin" not in text:
+if "using vi = vector<ll>;" not in text:
     sys.exit("テンプレートヘッダが展開されていません")
 if "int main()" not in text:
     sys.exit("main がありません")

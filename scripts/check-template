@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# C++ テンプレートを、C++17 と現行の標準、LOCAL の有無、展開後の単体ビルドで確認する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+if [[ -z "${AC_LIBRARY_INCLUDE:-}" ]]; then
+  echo "AC_LIBRARY_INCLUDE が未設定です。nix develop 内で実行してください。" >&2
+  exit 1
+fi
+
+root="$CP_PROJECT_ROOT"
+cxx="$root/scripts/cp-gxx"
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+standards=(c++17 gnu++20)
+if g++ -std=c++23 -x c++ -c /dev/null -o "$tmpdir/stdcheck.o" 2>/dev/null; then
+  standards+=(c++23)
+fi
+
+compile_run() {
+  local std="$1"
+  local src="$2"
+  shift 2
+  local bin="$tmpdir/prog"
+  bash "$cxx" -std="$std" -Werror -o "$bin" "$@" "$src"
+  "$bin"
+}
+
+cat >"$tmpdir/show.cpp" <<'EOF'
+#include "library/cpp/template.hpp"
+
+int main() {
+  print(1);
+  int x = 0;
+  SHOW(++x);
+#ifdef LOCAL
+  return x == 1 ? 0 : 1;
+#else
+  return x == 0 ? 0 : 1;
+#endif
+}
+EOF
+printf '1\n' >"$tmpdir/expect-out"
+
+for std in "${standards[@]}"; do
+  echo "== template $std =="
+  compile_run "$std" "$root/tests/cpp/test_template.cpp"
+  compile_run "$std" "$root/tests/cpp/test_template.cpp" -DLOCAL
+  compile_run "$std" "$root/tests/cpp/test_template_acl.cpp"
+  compile_run "$std" "$root/library/cpp/example.cpp"
+  compile_run "$std" "$root/library/cpp/example.cpp" -DLOCAL
+
+  echo "-- SHOW の出力先 $std"
+  bash "$cxx" -std="$std" -Werror -o "$tmpdir/show" "$tmpdir/show.cpp"
+  "$tmpdir/show" >"$tmpdir/show.out" 2>"$tmpdir/show.err"
+  cmp -s "$tmpdir/show.out" "$tmpdir/expect-out"
+  [[ ! -s "$tmpdir/show.err" ]]
+  bash "$cxx" -std="$std" -DLOCAL -Werror -o "$tmpdir/show" "$tmpdir/show.cpp"
+  "$tmpdir/show" >"$tmpdir/show.out" 2>"$tmpdir/show.err"
+  cmp -s "$tmpdir/show.out" "$tmpdir/expect-out"
+  grep -q '++x' "$tmpdir/show.err"
+  grep -q 'main' "$tmpdir/show.err"
+  if grep -q '++x' "$tmpdir/show.out"; then
+    echo "デバッグ出力が標準出力に混ざっています" >&2
+    exit 1
+  fi
+done
+
+echo "== 展開したテンプレート =="
+bundled="$tmpdir/bundled.cpp"
+python3 "$root/scripts/bundle_cpp.py" -I "$root" "$root/tests/cpp/test_template.cpp" >"$bundled"
+python3 - "$bundled" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+if '#include "library/' in text:
+    sys.exit("ローカル include が残っています")
+if "using vi = vector<ll>;" not in text:
+    sys.exit("テンプレートヘッダが展開されていません")
+if "#ifdef LOCAL" not in text or "#define SHOW(...)" not in text:
+    sys.exit("LOCAL の分岐が展開されていません")
+if ".shrink_to_fit(" in text:
+    sys.exit("shrink_to_fit を呼んでいます")
+PY
+
+for std in "${standards[@]}"; do
+  echo "-- bundled $std"
+  g++ -std="$std" -O2 -Wall -Wextra -Werror -o "$tmpdir/bundled" "$bundled"
+  "$tmpdir/bundled"
+  echo "-- bundled $std -DLOCAL"
+  g++ -std="$std" -DLOCAL -O2 -Wall -Wextra -Werror -o "$tmpdir/bundled-local" "$bundled"
+  "$tmpdir/bundled-local"
+done
