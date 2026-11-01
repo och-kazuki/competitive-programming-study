@@ -6,14 +6,19 @@
 #include "library/cpp/template.hpp"
 ```
 
-`template.hpp` は入出力ヘルパーやマクロをまとめた共通ヘッダです。新しいアルゴリズムは同じディレクトリにヘッダを足し、解答側で include します。
+`template.hpp` は、解答で繰り返す型・入出力・ループをまとめた共通ヘッダです。短い使用例は [example.cpp](example.cpp) です。新しいアルゴリズムは同じディレクトリにヘッダを足し、解答側で include します。
 
 ```cpp
 #include "library/cpp/template.hpp"
 #include "library/cpp/your_header.hpp"
 ```
 
-`#include <atcoder/...>` は AtCoder Library です。`nix develop` がパスを通します。問題ごとに使うときは `a.cpp` に書きます。
+`#include <atcoder/...>` は AtCoder Library です。`nix develop` がパスを通します。問題ごとに使うときは、このヘッダのあとで `a.cpp` に書きます。`len` や `all` は引数を取るマクロなので、AtCoder Library 内の `int len` のような変数とは衝突しません。
+
+```cpp
+#include "library/cpp/template.hpp"
+#include <atcoder/dsu>
+```
 
 提出前に、引用符の include を1ファイルへ展開してコピーします。
 
@@ -22,5 +27,97 @@ just copy work/abc400/a
 ```
 
 ファイルに残すときは `just submit-file work/abc400/a` です。`work/abc400/a/submit.cpp` ができます。標準出力へ出すだけなら `just bundle work/abc400/a/a.cpp` です。`#include <atcoder/...>` は展開せず残します。AtCoder のジャッジには AtCoder Library があるためです。
+
+## 型
+
+`vi` は `vector<ll>` です。`vector<int>` ではありません。
+
+| 名前 | 意味 |
+| --- | --- |
+| `ll` | `long long` |
+| `u32` / `u64` | `uint32_t` / `uint64_t` |
+| `pi` | `pair<ll, ll>` |
+| `vi` | `vector<ll>` |
+| `vc<T>` | `vector<T>` |
+| `vvc<T>` | `vector<vector<T>>` |
+| `pq_max<T>` | 大きい値が先に出る `priority_queue` |
+| `pq_min<T>` | 小さい値が先に出る `priority_queue` |
+
+## 入出力
+
+起動時に `ios::sync_with_stdio(false)` と `cin.tie(nullptr)` を設定します。`cout` の精度は 16 桁です。独自の `fread` / `fwrite` バッファは使いません。
+
+- `read(a, b, ...)` は、宣言済みの変数へ読みます。基本型、文字列、`pair`、`vector`、二次元配列に対応します。配列は確保済みの要素を前から順に読み、長さは変えません。
+- `print(a, b, ...)` は空白区切りで書き、末尾で改行します。`print()` は改行だけです。二次元配列は行ごとに改行します。
+- `YES(cond)` は `YES` または `NO`、`Yes(cond)` は `Yes` または `No` です。
+
+宣言と入力をまとめるマクロです。呼び出したあとも、その変数を使えます。
+
+```cpp
+INT(N, M);
+LL(A, B);
+STR(S);
+CHAR(c);
+DBL(x);
+VEC(ll, A, N);
+VV(ll, G, H, W);
+```
+
+マクロは文が二つに広がります。`if` の直後に置くときは波括弧が必要です。
+
+```cpp
+if (cond) {
+  INT(N);
+}
+```
+
+`print` はフラッシュしません。対話問題では出力のあと `cout << flush;` してください。
+
+カンマを含む型を `VEC` や `VV` に渡すときは、`pi` のような別名にするか、引数を括弧で囲みます。
+
+## ループ
+
+添字の型は `ll`、範囲は半開区間です。境界はループの前に一度だけ評価します。境界の式に副作用は持たせないでください。`step` は正の値です。
+
+```cpp
+FOR(n);             // n 回
+FOR(i, n);          // 0 <= i < n
+FOR(i, l, r);       // l <= i < r
+FOR(i, l, r, step); // 正の step で増加
+FOR_R(n);           // n 回の逆順
+FOR_R(i, n);        // n - 1 から 0
+FOR_R(i, l, r);     // r - 1 から l
+```
+
+回数だけの形式は、入れ子にしても内部の変数名が重なりません。`FOR_R` は個数を `ll` にしてから減らすので、空の `vector` の `size()` を渡しても符号なし整数はアンダーフローしません。
+
+## 補助
+
+- `all(x)` は `begin()` と `end()`、`rall(x)` は逆方向です。
+- `len(x)` は要素数を `ll` で返します。
+- `eb` は `emplace_back` です。
+- `chmin(a, b)` / `chmax(a, b)` は更新したら true を返します。
+- `SUM<T>(A)` は型 `T` の総和です。
+- `LB(A, x)` / `UB(A, x)` は、ソート済み配列での `lower_bound` / `upper_bound` の位置です。
+- `cumsum<T>(A)` は先頭に 0 を含む累積和です。
+- `UNIQUE(A)` はソートして重複を消します。並び順は変わり、`shrink_to_fit()` は呼びません。
+
+グリッドでは 4 方向の `dx` と `dy`、範囲外を見る `out_grid` をそのまま使えます。8 方向はヘッダ内のコメントです。定数 `inf` と `INF` もあります。
+
+## デバッグ
+
+`SHOW(a, b)` は、`LOCAL` を定義してコンパイルしたときだけ、変数名と値、関数名、行番号を標準エラーへ出します。`pair`、`vector`、二次元配列も表示します。`LOCAL` が無いときは引数を評価しません。提出用の展開結果にもこの分岐が残るので、ジャッジではデバッグ出力は出ません。
+
+```sh
+scripts/cp-gxx -DLOCAL -o /tmp/a work/abc400/a/a.cpp
+```
+
+`-std=c++17` を後ろに付けると、その標準で上書きできます。通常の `runcpp` と `just copy` は `gnu++20` です。
+
+```sh
+scripts/cp-gxx -std=c++17 -DLOCAL -o /tmp/a work/abc400/a/a.cpp
+```
+
+整数論、modint、ハッシュマップ、ビット列挙、128 ビット型、最適化 pragma は、このヘッダには入れていません。
 
 テストは `tests/cpp/` に `*.cpp` を置きます。`main` から終了コード 0 で戻るプログラムにしてください。ファイルが無くても `just check` は通ります。追加したテストはコンパイルして実行されます。

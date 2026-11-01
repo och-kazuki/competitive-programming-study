@@ -13,7 +13,7 @@ nix develop
 abc 400
 ```
 
-ABC 400 の全問題を `work/abc400/` に作り、サンプルを取得して `work/abc400/a` に移動します。問題数は AtCoder の問題一覧から取るので、A から G までも Ex もそのまま揃います。解答は移動先の `a.cpp`（Python なら `a.py`）に書きます。`a.cpp` は `library/cpp/template.hpp` を include しています。
+ABC 400 の全問題を `work/abc400/` に作り、サンプルを取得して `work/abc400/a` に移動します。問題数は AtCoder の問題一覧から取るので、A から G までも Ex もそのまま揃います。解答は移動先の `a.cpp`（Python なら `a.py`）に書きます。`a.cpp` は `library/cpp/template.hpp` を include しています。型、入出力、ループ、デバッグの使い方は [library/cpp/README.md](library/cpp/README.md) と [library/cpp/example.cpp](library/cpp/example.cpp) です。
 
 ```sh
 just oj-cpp
@@ -170,7 +170,7 @@ cd work/abc400/a
 just copy
 ```
 
-展開結果がコンパイルできるときだけクリップボードを書き換え、「コピーしました（N行）」と表示します。失敗したときはクリップボードを変えません。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。AtCoder Library を使うときは `a.cpp` に次を書きます。
+展開結果がコンパイルできるときだけクリップボードを書き換え、「コピーしました（N行）」と表示します。失敗したときはクリップボードを変えません。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。`SHOW` は `-DLOCAL` を付けたときだけ標準エラーへ出ます。提出物にはその分岐が残りますが、ジャッジは `LOCAL` を定義しないのでデバッグ出力は出ません。AtCoder Library を使うときは `a.cpp` に次を書きます。
 
 ```cpp
 #include <atcoder/dsu>

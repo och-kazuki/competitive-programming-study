@@ -26,7 +26,7 @@ cat >"$dest/a.cpp" <<'EOF'
 int main() {
   long long a, b;
   cin >> a >> b;
-  OUT(a + b);
+  print(a + b);
   return 0;
 }
 EOF
@@ -55,7 +55,7 @@ echo "== 問題ディレクトリで引数なし =="
   [[ "$cpp_out" == "5" ]]
   [[ "$py_out" == "5" ]]
   [[ -f submit.cpp ]]
-  grep -q 'template <class T> inline bool chmin' submit.cpp
+  grep -q 'using vi = vector<ll>;' submit.cpp
   if grep -q '#include "library/' submit.cpp; then
     echo "提出ファイルにローカル include が残っています" >&2
     exit 1
