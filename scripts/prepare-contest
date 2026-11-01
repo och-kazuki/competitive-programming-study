@@ -64,14 +64,46 @@ fetch_tasks() {
   python3 "$root/scripts/fetch-atcoder-tasks.py" "$contest_id"
 }
 
+sample_count() {
+  local dest="$1"
+  local file count=0
+  for file in "$dest"/test/*.in; do
+    [[ -f "$file" ]] && count=$((count + 1))
+  done
+  printf '%s\n' "$count"
+}
+
+# oj のログは標準出力に出る。移動先パスと混ざらないよう、ここでは受け取って
+# 成功時は件数だけ、失敗時だけログを標準エラーへ出す。
 download_sample() {
   local url="$1"
   local dest="$2"
+  local folder="$3"
+  local log status
+  log="$(mktemp)"
+  status=0
   if [[ -n "${CP_CONTEST_OJ_CMD:-}" ]]; then
-    "$CP_CONTEST_OJ_CMD" "$url" "$dest"
-    return
+    "$CP_CONTEST_OJ_CMD" "$url" "$dest" >"$log" 2>&1 || status=$?
+  else
+    (cd "$dest" && oj d "$url") >"$log" 2>&1 || status=$?
   fi
-  (cd "$dest" && oj d "$url")
+  if [[ "$status" -ne 0 ]]; then
+    echo "サンプルの取得に失敗しました: $folder" >&2
+    cat "$log" >&2
+    rm -f "$log"
+    return 1
+  fi
+  rm -f "$log"
+  echo "サンプルを取得: ${folder}（$(sample_count "$dest")件）" >&2
+  return 0
+}
+
+emit_dest() {
+  local path="$1"
+  if [[ -n "${CP_CONTEST_DEST_FILE:-}" ]]; then
+    printf '%s\n' "$path" >"$CP_CONTEST_DEST_FILE"
+  fi
+  printf '%s\n' "$path"
 }
 
 has_samples() {
@@ -147,7 +179,7 @@ if [[ "$fetched" -eq 0 ]]; then
   if [[ -z "$problem" ]]; then
     if [[ -d "$root/work/$contest_id/a" ]]; then
       echo "既にある A 問題のディレクトリを使います。" >&2
-      printf '%s\n' "$root/work/$contest_id/a"
+      emit_dest "$root/work/$contest_id/a"
       exit 2
     fi
     exit 1
@@ -157,16 +189,15 @@ if [[ "$fetched" -eq 0 ]]; then
   install_templates "$dest"
   if has_samples "$dest"; then
     echo "取得済み: $problem" >&2
-    printf '%s\n' "$dest"
+    emit_dest "$dest"
     exit 2
   fi
-  echo "サンプルを取得: $problem" >&2
-  if download_sample "https://atcoder.jp/contests/${contest_id}/tasks/${contest_id}_${problem}" "$dest"; then
-    printf '%s\n' "$dest"
+  if download_sample "https://atcoder.jp/contests/${contest_id}/tasks/${contest_id}_${problem}" "$dest" "$problem"; then
+    emit_dest "$dest"
     exit 2
   fi
-  echo "サンプルの取得に失敗しました。作ったファイルは残します: $dest" >&2
-  printf '%s\n' "$dest"
+  echo "作ったファイルは残します: $dest" >&2
+  emit_dest "$dest"
   exit 2
 fi
 
@@ -211,17 +242,15 @@ for i in "${!work_folders[@]}"; do
   if [[ "$downloaded" -gt 0 ]]; then
     sleep "$download_wait"
   fi
-  echo "サンプルを取得: $folder" >&2
-  if download_sample "$url" "$dest"; then
+  if download_sample "$url" "$dest" "$folder"; then
     downloaded=$((downloaded + 1))
   else
-    echo "サンプルの取得に失敗しました: $folder" >&2
     failed=1
     downloaded=$((downloaded + 1))
   fi
 done
 
-printf '%s\n' "$root/work/$contest_id/$target"
+emit_dest "$root/work/$contest_id/$target"
 if [[ "$failed" -eq 1 ]]; then
   exit 2
 fi

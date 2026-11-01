@@ -20,11 +20,15 @@ _cp_root() {
 }
 
 _cp_contest_go() {
-  local root dest status
+  local root dest status dest_file
   root="$(_cp_root)" || return 1
+  dest_file="$(mktemp)"
   status=0
-  dest="$("$root/scripts/prepare-contest" "$@")" || status=$?
-  if [ -n "$dest" ]; then
+  # 移動先は標準出力ではなく専用ファイルで受け取る。oj のログが混ざっても cd できる。
+  CP_CONTEST_DEST_FILE="$dest_file" "$root/scripts/prepare-contest" "$@" || status=$?
+  dest="$(tail -n 1 "$dest_file" 2>/dev/null | tr -d '\r' || true)"
+  rm -f "$dest_file"
+  if [ -n "$dest" ] && [ -d "$dest" ]; then
     cd "$dest" || return 1
   fi
   return "$status"

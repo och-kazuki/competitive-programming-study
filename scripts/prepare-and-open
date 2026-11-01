@@ -17,7 +17,10 @@ else
 fi
 
 status=0
-dest="$("$root/scripts/prepare-contest" "${args[@]}")" || status=$?
+dest_file="$(mktemp)"
+CP_CONTEST_DEST_FILE="$dest_file" "$root/scripts/prepare-contest" "${args[@]}" || status=$?
+dest="$(tail -n 1 "$dest_file" 2>/dev/null | tr -d '\r' || true)"
+rm -f "$dest_file"
 if [[ -z "$dest" || ! -f "$dest/a.cpp" ]]; then
   exit "$status"
 fi

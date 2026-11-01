@@ -7,7 +7,7 @@ if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
 fi
 
 work=$(mktemp -d)
-trap 'rm -rf "$work" "$CP_PROJECT_ROOT/work/abc999" "$CP_PROJECT_ROOT/work/abc998"' EXIT
+trap 'rm -rf "$work" "$CP_PROJECT_ROOT/work/abc999" "$CP_PROJECT_ROOT/work/abc998" "$CP_PROJECT_ROOT/work/abc997" "$CP_PROJECT_ROOT/work/abc996" "$CP_PROJECT_ROOT/work/abc995"' EXIT
 
 fetch="$work/fetch"
 oj="$work/oj"
@@ -22,10 +22,14 @@ printf '%s %s\n' ex "https://atcoder.jp/contests/$1/tasks/${1}_h"
 EOF
 cat >"$oj" <<'EOF'
 #!/bin/sh
+# 本物の oj と同じく、ログは標準出力に出す。
+echo "[INFO] online-judge-tools fake"
+echo "[INFO] download $1"
 printf '%s\n' "$1" >> "$CP_OJ_LOG"
 mkdir -p "$2/test"
 printf '2 3\n' > "$2/test/sample-1.in"
 printf '5\n' > "$2/test/sample-1.out"
+echo "[SUCCESS] saved to: test/sample-1.in"
 EOF
 fail_fetch="$work/fail-fetch"
 cat >"$fail_fetch" <<'EOF'
@@ -111,6 +115,7 @@ status=$?
 set -e
 [[ "$status" -eq 2 ]]
 [[ "$out" == "$CP_PROJECT_ROOT/work/abc998/e" ]]
+[[ "$out" != *INFO* ]]
 [[ -f "$out/a.cpp" ]]
 [[ -f "$out/test/sample-1.in" ]]
 
@@ -119,6 +124,8 @@ export CP_CONTEST_FETCH_CMD="$fetch"
 oj_partial="$work/oj-partial"
 cat >"$oj_partial" <<'EOF'
 #!/bin/sh
+echo "[INFO] online-judge-tools fake"
+echo "[INFO] download $1"
 printf '%s\n' "$1" >> "$CP_OJ_LOG"
 case "$1" in
 *_b) exit 1 ;;
@@ -136,7 +143,23 @@ status=$?
 set -e
 [[ "$status" -eq 2 ]]
 [[ "$out" == "$CP_PROJECT_ROOT/work/abc997/a" ]]
+[[ "$out" != *INFO* ]]
 [[ -f "$CP_PROJECT_ROOT/work/abc997/a/test/sample-1.in" ]]
 [[ -f "$CP_PROJECT_ROOT/work/abc997/b/a.cpp" ]]
 [[ ! -f "$CP_PROJECT_ROOT/work/abc997/b/test/sample-1.in" ]]
 rm -rf "$CP_PROJECT_ROOT/work/abc997"
+
+echo "== oj の標準出力ログが移動先パスに混ざらない =="
+export CP_CONTEST_FETCH_CMD="$fetch"
+export CP_CONTEST_OJ_CMD="$oj"
+out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 996)
+[[ "$out" == "$CP_PROJECT_ROOT/work/abc996/a" ]]
+[[ "$out" != *INFO* ]]
+[[ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" -eq 1 ]]
+
+echo "== エディタ起動側も同じパスを使う =="
+status=0
+msg=$(PATH="/usr/bin:/bin" "$CP_PROJECT_ROOT/scripts/prepare-and-open" "995" 2>&1) || status=$?
+[[ "$status" -eq 0 ]]
+printf '%s\n' "$msg" | grep -F "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" >/dev/null
+[[ -f "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" ]]
