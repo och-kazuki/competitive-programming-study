@@ -56,7 +56,7 @@ experimental-features = nix-command flakes
 
 ### 開発シェルに入る
 
-リポジトリのルートで次を実行します。
+リポジトリの中なら、どのディレクトリからでも次で入れます。`work/abc400/a` で `nix develop ../../..` としても、`.venv` と `runcpp` はリポジトリのルートを基準にします。
 
 ```sh
 nix develop

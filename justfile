@@ -49,4 +49,5 @@ check:
     "{{root}}/scripts/check"
     "{{root}}/scripts/oj-smoke"
     "{{root}}/scripts/check-cwd"
+    "{{root}}/scripts/check-nix-root"
     pyright

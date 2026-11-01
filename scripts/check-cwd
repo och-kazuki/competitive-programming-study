@@ -78,3 +78,26 @@ echo "== 絶対パス =="
   cd /tmp
   just --justfile "$CP_PROJECT_ROOT/justfile" oj-cpp "$dest"
 )
+
+echo "== submit-file の失敗では submit.cpp を残さない =="
+fail_dir=$(mktemp -d)
+(
+  if "$CP_PROJECT_ROOT/scripts/submit-file" "$fail_dir"; then
+    echo "a.cpp が無いのに成功しました" >&2
+    exit 1
+  fi
+  if [[ -e "$fail_dir/submit.cpp" ]]; then
+    echo "空の submit.cpp が残っています" >&2
+    exit 1
+  fi
+  printf '%s\n' '#include "library/cpp/no-such-header.hpp"' 'int main() { return 0; }' >"$fail_dir/a.cpp"
+  if "$CP_PROJECT_ROOT/scripts/submit-file" "$fail_dir"; then
+    echo "壊れた include なのに成功しました" >&2
+    exit 1
+  fi
+  if [[ -e "$fail_dir/submit.cpp" || -n "$(find "$fail_dir" -name '.submit.*' -print -quit)" ]]; then
+    echo "失敗後に一時ファイルか submit.cpp が残っています" >&2
+    exit 1
+  fi
+)
+rm -rf "$fail_dir"
