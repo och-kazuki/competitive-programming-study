@@ -57,3 +57,44 @@ if [[ "$got" != "UNCHANGED" ]]; then
   echo "コンパイル失敗なのにクリップボードが変わりました: $got" >&2
   exit 1
 fi
+
+echo "== 子プロセスが残ってもパイプが終わる =="
+linger_bin="$work/bin"
+mkdir -p "$linger_bin"
+pidfile="$work/linger.pid"
+cat >"$linger_bin/xclip" <<'EOF'
+#!/bin/sh
+cat > "$CP_CLIP_SINK"
+# stdout/stderr を握ったまま残る。親が切り離していないとパイプが閉じない。
+(sleep 60) &
+echo $! > "$CP_CLIP_PID"
+EOF
+chmod +x "$linger_bin/xclip"
+printf 'BEFORE\n' >"$sink"
+if ! linger_out=$(
+  timeout 5 env \
+    -u CP_CLIPBOARD_CMD \
+    -u WAYLAND_DISPLAY \
+    -u WSL_DISTRO_NAME \
+    -u WSL_INTEROP \
+    DISPLAY=:0 \
+    PATH="$linger_bin:$PATH" \
+    CP_CLIP_SINK="$sink" \
+    CP_CLIP_PID="$pidfile" \
+    bash -c '"$1" "$2" 2>&1 | tail' _ \
+    "$CP_PROJECT_ROOT/scripts/copy-submit" \
+    "$CP_PROJECT_ROOT/templates/a.cpp"
+); then
+  echo "パイプが5秒以内に終わりませんでした" >&2
+  exit 1
+fi
+if [[ -f "$pidfile" ]]; then
+  kill "$(cat "$pidfile")" 2>/dev/null || true
+  wait "$(cat "$pidfile")" 2>/dev/null || true
+fi
+printf '%s\n' "$linger_out" | grep -q 'コピーしました（'
+linger_got=$(cat "$sink")
+if [[ "$linger_got" != "$expected" ]]; then
+  echo "残存する子プロセスのテストで、渡した内容が違います" >&2
+  exit 1
+fi
