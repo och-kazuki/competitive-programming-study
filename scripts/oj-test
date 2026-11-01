@@ -2,6 +2,9 @@
 # 問題ディレクトリの test/ を oj で実行する。
 set -euo pipefail
 
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "使い方: oj-test cpp|py [ディレクトリ]" >&2
   exit 1

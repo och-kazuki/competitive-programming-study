@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# このファイルは source する。devShell の外では、手元のツールを使わずに止める。
+if [ "${CP_IN_DEV_SHELL:-}" != 1 ]; then
+  echo "先に nix develop を実行してください。" >&2
+  exit 1
+fi

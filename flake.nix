@@ -74,6 +74,7 @@
                 exit 1
               fi
 
+              export CP_IN_DEV_SHELL=1
               export CP_PROJECT_ROOT="$project_root"
               export AC_LIBRARY_INCLUDE="${pkgs.ac-library}/include"
               export CPLUS_INCLUDE_PATH="$project_root:$AC_LIBRARY_INCLUDE''${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
@@ -115,9 +116,10 @@
                 ];
               }
               ''
+                export CP_IN_DEV_SHELL=1
                 export CP_PROJECT_ROOT=${./.}
                 export AC_LIBRARY_INCLUDE=${pkgs.ac-library}/include
-                bash "${./scripts/check}"
+                bash "$CP_PROJECT_ROOT/scripts/check"
                 touch "$out"
               '';
         }

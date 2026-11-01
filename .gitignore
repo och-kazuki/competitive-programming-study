@@ -1,5 +1,4 @@
-# direnv / Nix
-.direnv/
+# Nix
 result
 result-*
 

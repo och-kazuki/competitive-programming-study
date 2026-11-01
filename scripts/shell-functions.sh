@@ -1,22 +1,17 @@
-# コンテスト用のシェル関数。bash と zsh の両方で source する。
-# nix develop の shellHook から読まれる。direnv は関数を親シェルへ渡せないので、
-# 普段のシェルで使うときは ~/.bashrc か ~/.zshrc からこのファイルを source する。
+# nix develop の bash が shellHook から source する。
+# 外から source されても関数は定義しない。
 
-if [ -n "${BASH_VERSION:-}" ]; then
-  _CP_SHELL_FILE="${BASH_SOURCE[0]}"
-elif [ -n "${ZSH_VERSION:-}" ]; then
-  eval '_CP_SHELL_FILE="${(%):-%x}"'
-else
-  _CP_SHELL_FILE="$0"
+if [ "${CP_IN_DEV_SHELL:-}" != 1 ]; then
+  echo "先に nix develop を実行してください。" >&2
+  return 1 2>/dev/null || exit 1
 fi
-_CP_ROOT_FROM_FILE="$(cd "$(dirname "$_CP_SHELL_FILE")/.." && pwd)"
 
 _cp_root() {
   if [ -n "${CP_PROJECT_ROOT:-}" ] && [ -f "${CP_PROJECT_ROOT}/flake.nix" ]; then
     printf '%s\n' "$CP_PROJECT_ROOT"
     return 0
   fi
-  printf '%s\n' "$_CP_ROOT_FROM_FILE"
+  printf '%s\n' "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 }
 
 _cp_contest_go() {
