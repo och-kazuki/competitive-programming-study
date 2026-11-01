@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# 問題ディレクトリの test/ を oj で実行する。
+set -euo pipefail
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "使い方: oj-test cpp|py [ディレクトリ]" >&2
+  exit 1
+fi
+
+lang="$1"
+dir="${2:-.}"
+if [[ "$lang" != "cpp" && "$lang" != "py" ]]; then
+  echo "言語は cpp か py です: $lang" >&2
+  exit 1
+fi
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+dir=$(cd "$dir" && pwd)
+
+if [[ ! -d "$dir/test" ]]; then
+  echo "test/ がありません: $dir" >&2
+  echo "サンプルを置くか、問題ディレクトリで oj d <問題URL> を実行してください。" >&2
+  exit 1
+fi
+if ! command -v oj >/dev/null 2>&1; then
+  echo "oj が見つかりません。nix develop 内で実行してください。" >&2
+  exit 1
+fi
+
+case "$lang" in
+cpp)
+  if [[ ! -f "$dir/a.cpp" ]]; then
+    echo "a.cpp がありません: $dir" >&2
+    exit 1
+  fi
+  tmp=$(mktemp)
+  trap 'rm -f "$tmp"' EXIT
+  bash "$root/scripts/cp-gxx" -o "$tmp" "$dir/a.cpp"
+  oj t -c "$tmp" -d "$dir/test"
+  ;;
+py)
+  if [[ ! -f "$dir/a.py" ]]; then
+    echo "a.py がありません: $dir" >&2
+    exit 1
+  fi
+  python3="$root/.venv/bin/python"
+  if [[ ! -x "$python3" ]]; then
+    python3=$(command -v python3)
+  fi
+  oj t -c "$python3 $dir/a.py" -d "$dir/test"
+  ;;
+esac

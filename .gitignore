@@ -1,0 +1,27 @@
+# direnv / Nix
+.direnv/
+result
+result-*
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.mypy_cache/
+
+# clangd 向けに生成する。Nix ストアの絶対パスが入るためコミットしない。
+compile_flags.txt
+
+# ビルド成果物。oj のサンプル出力 tests/**/*.out は追跡する。
+*.out
+!tests/**/*.out
+*.exe
+*.o
+*.dSYM/
+
+# ルートに置いた実行ファイル
+/a
+
+# コンテスト中の作業ファイル。テンプレートから just new で作る。
+/work/

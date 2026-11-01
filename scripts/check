@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# テンプレートのコンパイル、ライブラリテスト、ruff を実行する。
+set -euo pipefail
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+if [[ -z "${AC_LIBRARY_INCLUDE:-}" ]]; then
+  echo "AC_LIBRARY_INCLUDE が未設定です。nix develop 内で実行してください。" >&2
+  exit 1
+fi
+
+cxx="$CP_PROJECT_ROOT/scripts/cp-gxx"
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+echo "== C++ テンプレート =="
+bash "$cxx" -o "$tmpdir/template" "$CP_PROJECT_ROOT/templates/a.cpp"
+"$tmpdir/template"
+
+echo "== C++ ライブラリテスト =="
+shopt -s nullglob
+tests=("$CP_PROJECT_ROOT"/tests/cpp/*.cpp)
+if [[ ${#tests[@]} -eq 0 ]]; then
+  echo "tests/cpp にテストがありません" >&2
+  exit 1
+fi
+for src in "${tests[@]}"; do
+  name=$(basename "$src" .cpp)
+  echo "-- $name"
+  bash "$cxx" -Werror -o "$tmpdir/$name" "$src"
+  "$tmpdir/$name"
+done
+
+echo "== Python ライブラリテスト =="
+export PYTHONPATH="$CP_PROJECT_ROOT/library/python${PYTHONPATH:+:$PYTHONPATH}"
+python3 -m unittest discover -s "$CP_PROJECT_ROOT/tests/python" -v
+
+echo "== C++ 展開 =="
+bundled="$tmpdir/bundled.cpp"
+python3 "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" -I "$CP_PROJECT_ROOT" \
+  "$CP_PROJECT_ROOT/tests/bundle/use_lib.cpp" >"$bundled"
+python3 - "$bundled" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+if text.count("long long binary_search_min") != 1:
+    sys.exit("展開結果に binary_search_min が1つではありません")
+if '#include "library/cpp/binary_search.hpp"' in text:
+    sys.exit("ローカル include が残っています")
+PY
+# 展開後はリポジトリをインクルードパスに入れなくてもコンパイルできる。
+g++ -std=gnu++20 -O2 -Wall -Wextra -Werror -o "$tmpdir/bundled" "$bundled"
+got=$("$tmpdir/bundled")
+if [[ "$got" != "7" ]]; then
+  echo "展開したプログラムの出力が想定と違います: $got" >&2
+  exit 1
+fi
+
+echo "== ruff =="
+export RUFF_CACHE_DIR="$tmpdir/ruff-cache"
+ruff check \
+  "$CP_PROJECT_ROOT/templates" \
+  "$CP_PROJECT_ROOT/library/python" \
+  "$CP_PROJECT_ROOT/tests" \
+  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py"
+ruff format --check \
+  "$CP_PROJECT_ROOT/templates" \
+  "$CP_PROJECT_ROOT/library/python" \
+  "$CP_PROJECT_ROOT/tests" \
+  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py"
