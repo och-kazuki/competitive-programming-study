@@ -81,6 +81,36 @@
       "problemMatcher": []
     },
     {
+      "label": "oj: サンプルテスト (C++ 通常ビルド)",
+      "type": "shell",
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "oj-cpp-release", "${fileDirname}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "C++: 開いているファイルを通常ビルドで実行",
+      "type": "shell",
+      "command": "nix",
+      "args": ["develop", "${workspaceFolder}", "-c", "just", "runcpp-release", "${file}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "oj: サンプルテスト (Python)",
       "type": "shell",
       "command": "nix",

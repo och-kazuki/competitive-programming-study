@@ -29,7 +29,9 @@ fi
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
-bash "$root/scripts/cp-gxx" -o "$tmp" "$src"
+mode="${CP_CXX_MODE:-debug}"
+echo "ビルド: $mode" >&2
+CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$tmp" "$src"
 if [[ ${#args[@]} -eq 0 ]]; then
   "$tmp"
 else
