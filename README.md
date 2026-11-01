@@ -159,7 +159,16 @@ just oj-cpp
 just oj-py
 ```
 
-手で足すときは `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。
+`just oj-cpp` と `runcpp` は、既定でデバッグビルドです。`-DLOCAL`、`-g`、`-O0`、`-ftrapv`、AddressSanitizer、UndefinedBehaviorSanitizer、`_GLIBCXX_DEBUG` を付けます。最適化を切るのは、最適化すると配列外参照が消えてサニタイザに届かないことがあるためです。`SHOW` は標準エラーへ出るので、`oj t` の正解判定には入りません。速度を見るときは通常ビルドにします。
+
+```sh
+just oj-cpp-release
+CP_CXX_MODE=release runcpp
+```
+
+サニタイザは Linux と WSL2 で使います。macOS では Nix の g++ が AddressSanitizer をリンクできないことがあり、そのときは `CP_CXX_MODE=release` にします。`just copy` と `just submit-file` は通常ビルドのままなので、提出物にサニタイザは入りません。
+
+手で足すときは `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。通常ビルドのタスクは「oj: サンプルテスト (C++ 通常ビルド)」です。
 
 ### 4. 提出する
 

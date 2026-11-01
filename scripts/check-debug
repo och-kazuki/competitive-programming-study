@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# デバッグビルドが配列外参照と符号付きオーバーフローを検出し、提出用コンパイルは通常のままであることを確認する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+root="$CP_PROJECT_ROOT"
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+compile() {
+  local mode="$1"
+  local src="$2"
+  local out="$3"
+  CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$out" "$src"
+}
+
+echo "== デバッグビルドは配列外参照を検出する =="
+cat >"$tmpdir/oob.cpp" <<'EOF'
+#include "library/cpp/template.hpp"
+int main() {
+  vi a(1, 0);
+  volatile int i = 3;
+  return (int)a[i];
+}
+EOF
+compile debug "$tmpdir/oob.cpp" "$tmpdir/oob"
+set +e
+"$tmpdir/oob" >"$tmpdir/oob.out" 2>"$tmpdir/oob.err"
+status=$?
+set -e
+[[ "$status" -ne 0 ]]
+if ! grep -Eq 'Error:|AddressSanitizer|out-of-bounds|subscript' "$tmpdir/oob.err"; then
+  echo "配列外参照が検出されませんでした" >&2
+  cat "$tmpdir/oob.err" >&2
+  exit 1
+fi
+
+echo "== デバッグビルドは符号付きオーバーフローを検出する =="
+cat >"$tmpdir/ovf.cpp" <<'EOF'
+int add(int a, int b) { return a + b; }
+int main() {
+  volatile int a = 2000000000;
+  volatile int b = 2000000000;
+  volatile int c = add(a, b);
+  (void)c;
+  return 0;
+}
+EOF
+compile debug "$tmpdir/ovf.cpp" "$tmpdir/ovf"
+set +e
+"$tmpdir/ovf" >"$tmpdir/ovf.out" 2>"$tmpdir/ovf.err"
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  echo "符号付きオーバーフローが検出されませんでした" >&2
+  cat "$tmpdir/ovf.err" >&2
+  exit 1
+fi
+compile release "$tmpdir/ovf.cpp" "$tmpdir/ovf-release"
+"$tmpdir/ovf-release" >"$tmpdir/ovf-release.out" 2>"$tmpdir/ovf-release.err"
+[[ ! -s "$tmpdir/ovf-release.err" ]]
+
+echo "== SHOW は標準出力に混ざらない =="
+show="$root/tests/debug-show"
+compile release "$show/a.cpp" "$tmpdir/show-release"
+printf '2 3\n' | "$tmpdir/show-release" >"$tmpdir/show.out" 2>"$tmpdir/show.err"
+[[ "$(cat "$tmpdir/show.out")" == "5" ]]
+if grep -q 'a =' "$tmpdir/show.err"; then
+  echo "通常ビルドなのに SHOW が出ています" >&2
+  exit 1
+fi
+compile debug "$show/a.cpp" "$tmpdir/show-debug"
+printf '2 3\n' | "$tmpdir/show-debug" >"$tmpdir/show.out" 2>"$tmpdir/show.err"
+[[ "$(cat "$tmpdir/show.out")" == "5" ]]
+grep -q 'a =' "$tmpdir/show.err"
+if grep -q 'a =' "$tmpdir/show.out"; then
+  echo "SHOW が標準出力に出ています" >&2
+  exit 1
+fi
+if command -v oj >/dev/null 2>&1; then
+  CP_CXX_MODE=debug bash "$root/scripts/oj-test" cpp "$show" >"$tmpdir/oj.out"
+  grep -q 'AC' "$tmpdir/oj.out"
+else
+  echo "oj が無いのでサンプル判定は飛ばします"
+fi
+
+echo "== 提出前コンパイルはデバッグフラグを付けない =="
+real_gxx=$(command -v g++)
+mkdir -p "$tmpdir/bin"
+cat >"$tmpdir/bin/g++" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$CP_GXX_LOG"
+exec "$CP_REAL_GXX" "$@"
+EOF
+chmod +x "$tmpdir/bin/g++"
+cat >"$tmpdir/clip" <<'EOF'
+#!/bin/sh
+cat > "$CP_CLIP_SINK"
+EOF
+chmod +x "$tmpdir/clip"
+: >"$tmpdir/gxx.log"
+: >"$tmpdir/sink"
+PATH="$tmpdir/bin:$PATH" \
+  CP_CXX_MODE=debug \
+  CP_GXX_LOG="$tmpdir/gxx.log" \
+  CP_REAL_GXX="$real_gxx" \
+  CP_CLIPBOARD_CMD="$tmpdir/clip" \
+  CP_CLIP_SINK="$tmpdir/sink" \
+  bash "$root/scripts/copy-submit" "$root/templates/a.cpp" >/dev/null
+if grep -q 'fsanitize' "$tmpdir/gxx.log" || grep -q 'DLOCAL' "$tmpdir/gxx.log"; then
+  echo "提出前コンパイルにデバッグフラグが入っています" >&2
+  cat "$tmpdir/gxx.log" >&2
+  exit 1
+fi
+grep -q -- '-O2' "$tmpdir/gxx.log"

@@ -24,10 +24,20 @@ runcpp *args:
 runpy *args:
     "{{root}}/scripts/runpy" {{args}}
 
-# ディレクトリ内の a.cpp を oj でサンプルテストする。
+# ディレクトリ内の a.cpp を oj でサンプルテストする。既定はデバッグビルド。
 [no-cd]
 oj-cpp dir=".":
     "{{root}}/scripts/oj-test" cpp "{{dir}}"
+
+# 速度確認用。サニタイザなしの通常ビルドでサンプルテストする。
+[no-cd]
+oj-cpp-release dir=".":
+    CP_CXX_MODE=release "{{root}}/scripts/oj-test" cpp "{{dir}}"
+
+# 通常ビルドで C++ を実行する。
+[no-cd]
+runcpp-release *args:
+    CP_CXX_MODE=release "{{root}}/scripts/runcpp" {{args}}
 
 # ディレクトリ内の a.py を oj でサンプルテストする。
 [no-cd]

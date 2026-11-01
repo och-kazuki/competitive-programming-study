@@ -1,12 +1,42 @@
 #!/usr/bin/env bash
 # g++ を、テンプレートとライブラリと AtCoder Library が見えるフラグで起動する。
+# CP_CXX_MODE=debug で、LOCAL とサニタイザと libstdc++ のデバッグモードを付ける。
+# 未指定のときは release（提出に近い -O2）。runcpp と oj-test 側が debug を既定にする。
 set -euo pipefail
 
 # shellcheck disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
 
 root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-args=(-std=gnu++20 -O2 -Wall -Wextra -I"$root")
+mode="${CP_CXX_MODE:-release}"
+case "$mode" in
+release)
+  args=(-std=gnu++20 -O2 -Wall -Wextra -I"$root")
+  ;;
+debug)
+  # -O1 以上では、配列外参照が最適化で消えてサニタイザまで届かないことがある。
+  # この GCC は signed-integer-overflow の計装を出さないので、-ftrapv で加算を止める。
+  args=(
+    -std=gnu++20
+    -O0
+    -g
+    -fno-omit-frame-pointer
+    -ftrapv
+    -Wall
+    -Wextra
+    -DLOCAL
+    -D_GLIBCXX_DEBUG
+    -fsanitize=address,undefined
+    -fno-sanitize-recover=address,undefined
+    -Wp,-U_FORTIFY_SOURCE
+    -I"$root"
+  )
+  ;;
+*)
+  echo "CP_CXX_MODE は release か debug です: $mode" >&2
+  exit 1
+  ;;
+esac
 if [[ -n "${AC_LIBRARY_INCLUDE:-}" ]]; then
   args+=(-isystem "$AC_LIBRARY_INCLUDE")
 fi

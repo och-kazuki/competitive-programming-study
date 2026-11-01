@@ -38,7 +38,9 @@ cpp)
   fi
   tmp=$(mktemp)
   trap 'rm -f "$tmp"' EXIT
-  bash "$root/scripts/cp-gxx" -o "$tmp" "$dir/a.cpp"
+  mode="${CP_CXX_MODE:-debug}"
+  echo "ビルド: $mode" >&2
+  CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$tmp" "$dir/a.cpp"
   oj t -c "$tmp" -d "$dir/test"
   ;;
 py)
