@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# 偽物のクリップボードコマンドで、展開結果の受け渡しと失敗時の非更新を確認する。
+set -euo pipefail
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+fake="$work/fake-clipboard"
+sink="$work/clipboard.txt"
+cat >"$fake" <<'EOF'
+#!/bin/sh
+cat > "$CP_CLIP_SINK"
+EOF
+chmod +x "$fake"
+export CP_CLIPBOARD_CMD="$fake"
+export CP_CLIP_SINK="$sink"
+
+echo "== 展開したコードがクリップボードへ渡る =="
+printf 'BEFORE\n' >"$sink"
+out=$("$CP_PROJECT_ROOT/scripts/copy-submit" "$CP_PROJECT_ROOT/templates/a.cpp")
+printf '%s\n' "$out" | grep -q '^コピーしました（'
+expected=$("$CP_PROJECT_ROOT/scripts/bundle_cpp.py" -I "$CP_PROJECT_ROOT" "$CP_PROJECT_ROOT/templates/a.cpp")
+got=$(cat "$sink")
+if [[ "$got" != "$expected" ]]; then
+  echo "クリップボードへ渡した内容が展開結果と違います" >&2
+  exit 1
+fi
+
+echo "== フォルダを指定しても a.cpp をコピーする =="
+mkdir -p "$work/prob"
+cp "$CP_PROJECT_ROOT/templates/a.cpp" "$work/prob/a.cpp"
+printf 'BEFORE\n' >"$sink"
+(
+  cd "$work/prob"
+  just --justfile "$CP_PROJECT_ROOT/justfile" copy
+) >/dev/null
+got=$(cat "$sink")
+if [[ "$got" != "$expected" ]]; then
+  echo "just copy の結果が展開結果と違います" >&2
+  exit 1
+fi
+
+echo "== コンパイル失敗時はクリップボードを変えない =="
+printf 'UNCHANGED\n' >"$sink"
+bad="$work/bad.cpp"
+printf '%s\n' 'int main() { this is not valid c++' >"$bad"
+if "$CP_PROJECT_ROOT/scripts/copy-submit" "$bad"; then
+  echo "壊れたソースなのに成功しました" >&2
+  exit 1
+fi
+got=$(cat "$sink")
+if [[ "$got" != "UNCHANGED" ]]; then
+  echo "コンパイル失敗なのにクリップボードが変わりました: $got" >&2
+  exit 1
+fi

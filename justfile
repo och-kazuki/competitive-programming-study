@@ -44,10 +44,16 @@ bundle src:
 submit-file dir=".":
     "{{root}}/scripts/submit-file" "{{dir}}"
 
+# 展開した提出コードをクリップボードへコピーする。
+[no-cd]
+copy target=".":
+    "{{root}}/scripts/copy-submit" "{{target}}"
+
 # テンプレート、ライブラリ、ruff、oj、pyright を確認する
 check:
     "{{root}}/scripts/check"
     "{{root}}/scripts/oj-smoke"
     "{{root}}/scripts/check-cwd"
     "{{root}}/scripts/check-nix-root"
+    "{{root}}/scripts/check-copy"
     pyright

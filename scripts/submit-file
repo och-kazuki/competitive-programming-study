@@ -18,6 +18,9 @@ cleanup() {
 trap cleanup EXIT
 
 python3 "$root/scripts/bundle_cpp.py" -I "$root" "$dir/a.cpp" >"$tmp"
+# mktemp は 600 で作る。通常の新規ファイルと同じく umask に従わせる。
+printf -v perm '%o' "$((0666 & ~8#$(umask)))"
+chmod "$perm" "$tmp"
 mv "$tmp" "$dir/submit.cpp"
 trap - EXIT
 echo "$dir/submit.cpp"
