@@ -22,6 +22,8 @@ just new abc400 a
 
 `a.cpp` は最初から `library/cpp/template.hpp` を include しています。`main` に解答を書きます。テンプレートの関数やマクロはヘッダ側にあり、解答ファイルでは変えません。
 
+`just oj-cpp` のように引数を省略すると、`just` を実行したディレクトリを見ます。相対パスを渡したときも、そのディレクトリからの相対パスです。
+
 ```sh
 cd work/abc400/a
 oj d https://atcoder.jp/contests/abc400/tasks/abc400_a

@@ -14,27 +14,33 @@ sync:
 new contest problem:
     "{{root}}/scripts/new-problem" "{{contest}}" "{{problem}}"
 
-# C++ をコンパイルして実行する
+# C++ をコンパイルして実行する。パスは just を実行したディレクトリ基準。
+[no-cd]
 runcpp *args:
     "{{root}}/scripts/runcpp" {{args}}
 
-# Python を実行する
+# Python を実行する。パスは just を実行したディレクトリ基準。
+[no-cd]
 runpy *args:
     "{{root}}/scripts/runpy" {{args}}
 
-# ディレクトリ内の a.cpp を oj でサンプルテストする
+# ディレクトリ内の a.cpp を oj でサンプルテストする。
+[no-cd]
 oj-cpp dir=".":
     "{{root}}/scripts/oj-test" cpp "{{dir}}"
 
-# ディレクトリ内の a.py を oj でサンプルテストする
+# ディレクトリ内の a.py を oj でサンプルテストする。
+[no-cd]
 oj-py dir=".":
     "{{root}}/scripts/oj-test" py "{{dir}}"
 
-# 引用符の include を展開して標準出力へ出す
+# 引用符の include を展開して標準出力へ出す。
+[no-cd]
 bundle src:
     python3 "{{root}}/scripts/bundle_cpp.py" -I "{{root}}" "{{src}}"
 
-# 問題ディレクトリの a.cpp を展開し submit.cpp を書く
+# 問題ディレクトリの a.cpp を展開し submit.cpp を書く。
+[no-cd]
 submit-file dir=".":
     "{{root}}/scripts/submit-file" "{{dir}}"
 
@@ -42,4 +48,5 @@ submit-file dir=".":
 check:
     "{{root}}/scripts/check"
     "{{root}}/scripts/oj-smoke"
+    "{{root}}/scripts/check-cwd"
     pyright
