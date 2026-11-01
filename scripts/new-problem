@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# templates からコンテスト用の作業ディレクトリを作る。
+set -euo pipefail
+
+if [[ $# -ne 2 ]]; then
+  echo "使い方: new-problem <コンテスト> <問題>" >&2
+  echo "例:     just new abc400 a" >&2
+  exit 1
+fi
+
+contest="$1"
+problem="$2"
+name_pattern='^[A-Za-z0-9][A-Za-z0-9_-]*$'
+
+if [[ ! "$contest" =~ $name_pattern ]]; then
+  echo "コンテスト名は英数字、_、- だけ使えます: $contest" >&2
+  exit 1
+fi
+if [[ ! "$problem" =~ $name_pattern ]]; then
+  echo "問題名は英数字、_、- だけ使えます: $problem" >&2
+  exit 1
+fi
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+dest="$root/work/$contest/$problem"
+
+if [[ -e "$dest" ]]; then
+  echo "すでに存在します: $dest" >&2
+  exit 1
+fi
+
+mkdir -p "$dest/test"
+cp "$root/templates/a.cpp" "$dest/a.cpp"
+cp "$root/templates/a.py" "$dest/a.py"
+
+echo "作りました: $dest"
+echo "  $dest/a.cpp"
+echo "  $dest/a.py"
+echo "  $dest/test/"

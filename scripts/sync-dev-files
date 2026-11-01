@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# clangd がどのエディタからでも同じフラグを読めるよう compile_flags.txt を書く。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+acl="${AC_LIBRARY_INCLUDE:-}"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+
+{
+  printf '%s\n' \
+    "-std=gnu++20" \
+    "-Wall" \
+    "-Wextra" \
+    "-O2" \
+    "-I${root}"
+  if [[ -n "$acl" ]]; then
+    printf '%s\n' "-isystem" "$acl"
+  fi
+  if command -v g++ >/dev/null 2>&1; then
+    # シェルのインクルードパスを混ぜると、同じディレクトリがフラグに重複する。
+    LC_ALL=C env -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH -u CPATH \
+      g++ -std=gnu++20 -E -x c++ - -v </dev/null 2>&1 |
+      awk -v root="$root" -v acl="$acl" '
+        /#include <\.\.\.> search starts here:/ { found = 1; next }
+        /End of search list\./ { found = 0 }
+        found && /^ / {
+          sub(/^ +/, "", $0)
+          sub(/ +$/, "", $0)
+          if ($0 == "" || $0 == root || $0 == acl) {
+            next
+          }
+          if ($0 ~ /python[0-9]/) {
+            next
+          }
+          print "-isystem"
+          print $0
+        }
+      '
+  fi
+} >"$tmp"
+
+mv "$tmp" "$root/compile_flags.txt"
+trap - EXIT

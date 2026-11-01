@@ -1,0 +1,106 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "C++: ビルドして実行",
+      "type": "shell",
+      "command": "runcpp",
+      "args": ["${file}"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Python: 実行",
+      "type": "shell",
+      "command": "runpy",
+      "args": ["${file}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "oj: サンプルテスト (C++)",
+      "type": "shell",
+      "command": "just",
+      "args": ["oj-cpp", "${fileDirname}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "oj: サンプルテスト (Python)",
+      "type": "shell",
+      "command": "just",
+      "args": ["oj-py", "${fileDirname}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "問題ファイルを作成",
+      "type": "shell",
+      "command": "just",
+      "args": ["new", "${input:contest}", "${input:problem}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "環境ファイルを更新",
+      "type": "shell",
+      "command": "just",
+      "args": ["sync"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "チェック",
+      "type": "shell",
+      "command": "just",
+      "args": ["check"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "contest",
+      "type": "promptString",
+      "description": "コンテスト名（例: abc400）"
+    },
+    {
+      "id": "problem",
+      "type": "promptString",
+      "description": "問題名（例: a）"
+    }
+  ]
+}

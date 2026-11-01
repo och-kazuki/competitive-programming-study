@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# 追跡しているサンプルで、問題ディレクトリと同じ手順の oj を確認する。
+set -euo pipefail
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+"$CP_PROJECT_ROOT/scripts/oj-test" cpp "$CP_PROJECT_ROOT/tests/oj"
+"$CP_PROJECT_ROOT/scripts/oj-test" py "$CP_PROJECT_ROOT/tests/oj"
