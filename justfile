@@ -56,4 +56,5 @@ check:
     "{{root}}/scripts/check-cwd"
     "{{root}}/scripts/check-nix-root"
     "{{root}}/scripts/check-copy"
+    "{{root}}/scripts/check-contest"
     pyright

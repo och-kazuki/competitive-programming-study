@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+# コンテストの作業ディレクトリを作り、サンプルを取得する。
+# 移動先の絶対パスだけを標準出力へ書く。経過は標準エラーへ書く。
+set -euo pipefail
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+usage() {
+  echo "使い方: prepare-contest <種別> <番号> [問題]" >&2
+  echo "        prepare-contest <コンテストID> [問題]" >&2
+  echo "例: prepare-contest abc 400" >&2
+  echo "    prepare-contest abc 400 e" >&2
+  echo "    prepare-contest arc190" >&2
+}
+
+if [[ $# -lt 1 || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 1
+fi
+
+kind=""
+number=""
+problem=""
+if [[ "$1" =~ ^(abc|arc|agc|ahc)$ ]]; then
+  kind="$1"
+  shift
+  if [[ $# -lt 1 ]]; then
+    usage
+    exit 1
+  fi
+  number="$1"
+  shift
+  problem="${1:-}"
+elif [[ "$1" =~ ^(abc|arc|agc|ahc)([0-9]+)$ ]]; then
+  kind="${BASH_REMATCH[1]}"
+  number="${BASH_REMATCH[2]}"
+  shift
+  problem="${1:-}"
+else
+  usage
+  exit 1
+fi
+
+if [[ ! "$number" =~ ^[0-9]+$ ]]; then
+  echo "番号は数字です: $number" >&2
+  exit 1
+fi
+if [[ -n "$problem" && ! "$problem" =~ ^[A-Za-z0-9]+$ ]]; then
+  echo "問題記号が不正です: $problem" >&2
+  exit 1
+fi
+problem="$(printf '%s' "$problem" | tr '[:upper:]' '[:lower:]')"
+printf -v contest_id '%s%03d' "$kind" "$((10#$number))"
+
+retries="${CP_CONTEST_RETRIES:-5}"
+retry_wait="${CP_CONTEST_RETRY_WAIT:-3}"
+download_wait="${CP_CONTEST_SLEEP:-2}"
+
+fetch_tasks() {
+  if [[ -n "${CP_CONTEST_FETCH_CMD:-}" ]]; then
+    "$CP_CONTEST_FETCH_CMD" "$contest_id"
+    return
+  fi
+  python3 "$root/scripts/fetch-atcoder-tasks.py" "$contest_id"
+}
+
+download_sample() {
+  local url="$1"
+  local dest="$2"
+  if [[ -n "${CP_CONTEST_OJ_CMD:-}" ]]; then
+    "$CP_CONTEST_OJ_CMD" "$url" "$dest"
+    return
+  fi
+  (cd "$dest" && oj d "$url")
+}
+
+has_samples() {
+  local dest="$1"
+  local file
+  for file in "$dest"/test/*.in; do
+    [[ -f "$file" ]] && return 0
+  done
+  return 1
+}
+
+install_templates() {
+  local dest="$1"
+  mkdir -p "$dest/test"
+  if [[ ! -e "$dest/a.cpp" ]]; then
+    cp "$root/templates/a.cpp" "$dest/a.cpp"
+  fi
+  if [[ ! -e "$dest/a.py" ]]; then
+    cp "$root/templates/a.py" "$dest/a.py"
+  fi
+}
+
+list_file="$(mktemp)"
+trap 'rm -f "$list_file"' EXIT
+
+attempt=1
+fetched=0
+while true; do
+  if fetch_tasks >"$list_file"; then
+    fetched=1
+    break
+  fi
+  if [[ "$attempt" -ge "$retries" ]]; then
+    break
+  fi
+  echo "問題一覧を取得できません（${attempt}/${retries}）。${retry_wait}秒後に再試行します。" >&2
+  echo "コンテスト開始前か、ネットワークに接続できない可能性があります。" >&2
+  sleep "$retry_wait"
+  attempt=$((attempt + 1))
+done
+
+declare -a folders=()
+declare -a urls=()
+if [[ "$fetched" -eq 1 ]]; then
+  while read -r folder url; do
+    [[ -n "${folder:-}" && -n "${url:-}" ]] || continue
+    folders+=("$folder")
+    urls+=("$url")
+  done <"$list_file"
+fi
+
+choose_folder() {
+  local want="$1"
+  local i
+  if [[ -z "$want" ]]; then
+    if [[ ${#folders[@]} -eq 0 ]]; then
+      return 1
+    fi
+    printf '%s\n' "${folders[0]}"
+    return 0
+  fi
+  for i in "${folders[@]}"; do
+    if [[ "$i" == "$want" ]]; then
+      printf '%s\n' "$i"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [[ "$fetched" -eq 0 ]]; then
+  echo "問題一覧を取得できませんでした。コンテスト開始前か、ネットワークに接続できない可能性があります。" >&2
+  if [[ -z "$problem" ]]; then
+    if [[ -d "$root/work/$contest_id/a" ]]; then
+      echo "既にある A 問題のディレクトリを使います。" >&2
+      printf '%s\n' "$root/work/$contest_id/a"
+      exit 2
+    fi
+    exit 1
+  fi
+  echo "指定された ${problem} だけ用意します。タスク ID は ${contest_id}_${problem} とみなします。" >&2
+  dest="$root/work/$contest_id/$problem"
+  install_templates "$dest"
+  if has_samples "$dest"; then
+    echo "取得済み: $problem" >&2
+    printf '%s\n' "$dest"
+    exit 2
+  fi
+  echo "サンプルを取得: $problem" >&2
+  if download_sample "https://atcoder.jp/contests/${contest_id}/tasks/${contest_id}_${problem}" "$dest"; then
+    printf '%s\n' "$dest"
+    exit 2
+  fi
+  echo "サンプルの取得に失敗しました。作ったファイルは残します: $dest" >&2
+  printf '%s\n' "$dest"
+  exit 2
+fi
+
+if [[ ${#folders[@]} -eq 0 ]]; then
+  echo "問題一覧が空です: $contest_id" >&2
+  exit 1
+fi
+
+echo "${contest_id} の問題: ${folders[*]}" >&2
+
+target="$(choose_folder "$problem" || true)"
+if [[ -z "$target" ]]; then
+  echo "${contest_id} に ${problem} はありません。問題は ${folders[*]} です。" >&2
+  exit 1
+fi
+
+# 指定がなければ全問題を用意する。指定があればその問題だけ用意する。
+if [[ -n "$problem" ]]; then
+  work_folders=("$problem")
+  work_urls=()
+  for i in "${!folders[@]}"; do
+    if [[ "${folders[$i]}" == "$problem" ]]; then
+      work_urls=("${urls[$i]}")
+    fi
+  done
+else
+  work_folders=("${folders[@]}")
+  work_urls=("${urls[@]}")
+fi
+
+failed=0
+downloaded=0
+for i in "${!work_folders[@]}"; do
+  folder="${work_folders[$i]}"
+  url="${work_urls[$i]}"
+  dest="$root/work/$contest_id/$folder"
+  install_templates "$dest"
+  if has_samples "$dest"; then
+    echo "取得済み: $folder" >&2
+    continue
+  fi
+  if [[ "$downloaded" -gt 0 ]]; then
+    sleep "$download_wait"
+  fi
+  echo "サンプルを取得: $folder" >&2
+  if download_sample "$url" "$dest"; then
+    downloaded=$((downloaded + 1))
+  else
+    echo "サンプルの取得に失敗しました: $folder" >&2
+    failed=1
+    downloaded=$((downloaded + 1))
+  fi
+done
+
+printf '%s\n' "$root/work/$contest_id/$target"
+if [[ "$failed" -eq 1 ]]; then
+  exit 2
+fi

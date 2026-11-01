@@ -25,4 +25,4 @@ venv = ".venv"
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 extraPaths = ["library/python"]
-include = ["templates", "library/python", "tests/python", "tests/oj", "scripts/bundle_cpp.py"]
+include = ["templates", "library/python", "tests/python", "tests/oj", "scripts/bundle_cpp.py", "scripts/fetch-atcoder-tasks.py"]

@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# 問題一覧と oj を偽物に差し替え、ネットなしでコンテスト準備を確認する。
+set -euo pipefail
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work" "$CP_PROJECT_ROOT/work/abc999" "$CP_PROJECT_ROOT/work/abc998"' EXIT
+
+fetch="$work/fetch"
+oj="$work/oj"
+fetch_log="$work/fetch.log"
+oj_log="$work/oj.log"
+cat >"$fetch" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >> "$CP_FETCH_LOG"
+printf '%s %s\n' a "https://atcoder.jp/contests/$1/tasks/${1}_a"
+printf '%s %s\n' b "https://atcoder.jp/contests/$1/tasks/${1}_b"
+printf '%s %s\n' ex "https://atcoder.jp/contests/$1/tasks/${1}_h"
+EOF
+cat >"$oj" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >> "$CP_OJ_LOG"
+mkdir -p "$2/test"
+printf '2 3\n' > "$2/test/sample-1.in"
+printf '5\n' > "$2/test/sample-1.out"
+EOF
+fail_fetch="$work/fail-fetch"
+cat >"$fail_fetch" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >> "$CP_FETCH_LOG"
+echo "simulated failure" >&2
+exit 1
+EOF
+chmod +x "$fetch" "$oj" "$fail_fetch"
+
+export CP_CONTEST_FETCH_CMD="$fetch"
+export CP_CONTEST_OJ_CMD="$oj"
+export CP_CONTEST_SLEEP=0
+export CP_CONTEST_RETRIES=2
+export CP_CONTEST_RETRY_WAIT=0
+export CP_FETCH_LOG="$fetch_log"
+export CP_OJ_LOG="$oj_log"
+
+echo "== 全問題を作って A へ移動する =="
+: >"$fetch_log"
+: >"$oj_log"
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  abc 999
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/a" ]]
+)
+for folder in a b ex; do
+  [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/a.cpp" ]]
+  [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/a.py" ]]
+  [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/test/sample-1.in" ]]
+done
+[[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq 3 ]]
+
+echo "== 再実行は上書きせず、取得済みは飛ばす =="
+printf 'CUSTOM\n' >"$CP_PROJECT_ROOT/work/abc999/a/a.cpp"
+before=$(wc -l <"$oj_log" | tr -d ' ')
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  abc 999
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/a" ]]
+)
+[[ "$(cat "$CP_PROJECT_ROOT/work/abc999/a/a.cpp")" == "CUSTOM" ]]
+[[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq "$before" ]]
+
+echo "== 問題記号だけなら移動し、無ければその問題だけ用意する =="
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  abc 999 ex
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/ex" ]]
+)
+[[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq "$before" ]]
+rm -rf "$CP_PROJECT_ROOT/work/abc999/b"
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  abc 999 b
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/b" ]]
+)
+[[ -f "$CP_PROJECT_ROOT/work/abc999/b/a.cpp" ]]
+[[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq $((before + 1)) ]]
+
+echo "== 問題一覧が取れない =="
+export CP_CONTEST_FETCH_CMD="$fail_fetch"
+: >"$fetch_log"
+set +e
+out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 998)
+status=$?
+set -e
+[[ "$status" -eq 1 ]]
+[[ -z "$out" ]]
+[[ ! -d "$CP_PROJECT_ROOT/work/abc998" ]]
+[[ "$(wc -l <"$fetch_log" | tr -d ' ')" -eq 2 ]]
+
+export CP_CONTEST_FETCH_CMD="$fail_fetch"
+: >"$fetch_log"
+: >"$oj_log"
+set +e
+out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 998 e)
+status=$?
+set -e
+[[ "$status" -eq 2 ]]
+[[ "$out" == "$CP_PROJECT_ROOT/work/abc998/e" ]]
+[[ -f "$out/a.cpp" ]]
+[[ -f "$out/test/sample-1.in" ]]
+
+echo "== 一部のダウンロードに失敗しても移動先を返す =="
+export CP_CONTEST_FETCH_CMD="$fetch"
+oj_partial="$work/oj-partial"
+cat >"$oj_partial" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >> "$CP_OJ_LOG"
+case "$1" in
+*_b) exit 1 ;;
+esac
+mkdir -p "$2/test"
+printf '1\n' >"$2/test/sample-1.in"
+printf '1\n' >"$2/test/sample-1.out"
+EOF
+chmod +x "$oj_partial"
+export CP_CONTEST_OJ_CMD="$oj_partial"
+: >"$oj_log"
+set +e
+out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 997)
+status=$?
+set -e
+[[ "$status" -eq 2 ]]
+[[ "$out" == "$CP_PROJECT_ROOT/work/abc997/a" ]]
+[[ -f "$CP_PROJECT_ROOT/work/abc997/a/test/sample-1.in" ]]
+[[ -f "$CP_PROJECT_ROOT/work/abc997/b/a.cpp" ]]
+[[ ! -f "$CP_PROJECT_ROOT/work/abc997/b/test/sample-1.in" ]]
+rm -rf "$CP_PROJECT_ROOT/work/abc997"

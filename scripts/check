@@ -66,9 +66,11 @@ ruff check \
   "$CP_PROJECT_ROOT/templates" \
   "$CP_PROJECT_ROOT/library/python" \
   "$CP_PROJECT_ROOT/tests" \
-  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py"
+  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" \
+  "$CP_PROJECT_ROOT/scripts/fetch-atcoder-tasks.py"
 ruff format --check \
   "$CP_PROJECT_ROOT/templates" \
   "$CP_PROJECT_ROOT/library/python" \
   "$CP_PROJECT_ROOT/tests" \
-  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py"
+  "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" \
+  "$CP_PROJECT_ROOT/scripts/fetch-atcoder-tasks.py"
