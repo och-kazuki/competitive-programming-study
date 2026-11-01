@@ -16,7 +16,9 @@ fi
 name="cwdcheck"
 dest="$CP_PROJECT_ROOT/work/$name/a"
 rm -rf "$CP_PROJECT_ROOT/work/$name"
-trap 'rm -rf "$CP_PROJECT_ROOT/work/$name"' EXIT
+oj_cache=$("$CP_PROJECT_ROOT/scripts/seed-oj-cache")
+trap 'rm -rf "$CP_PROJECT_ROOT/work/$name" "$oj_cache"' EXIT
+export XDG_CACHE_HOME="$oj_cache"
 
 "$CP_PROJECT_ROOT/scripts/new-problem" "$name" a
 

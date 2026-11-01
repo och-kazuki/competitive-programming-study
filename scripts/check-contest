@@ -43,6 +43,35 @@ exit 1
 EOF
 chmod +x "$fetch" "$oj" "$fail_fetch"
 
+# PATH 上の curl / wget / python / oj は即失敗させる。
+# 後ろに本物が見えていても、先にこちらのスタブが選ばれる。
+net_block="$work/net-block"
+net_behind="$work/net-behind"
+mkdir -p "$net_block" "$net_behind"
+export CP_NET_DENY_LOG="$work/net-deny.log"
+: >"$CP_NET_DENY_LOG"
+install_net_deny() {
+  local name="$1"
+  local src
+  cat >"$net_block/$name" <<EOF
+#!/bin/sh
+printf '%s\n' "$name \$*" >> "\$CP_NET_DENY_LOG"
+echo "テスト中に $name が呼ばれました。ネットワークへは出ません。" >&2
+exit 99
+EOF
+  chmod +x "$net_block/$name"
+  for src in "/usr/bin/$name" "/bin/$name"; do
+    if [[ -x "$src" ]]; then
+      ln -s "$src" "$net_behind/$name"
+      break
+    fi
+  done
+}
+for name in curl wget python python3 oj; do
+  install_net_deny "$name"
+done
+export PATH="$net_block:$PATH"
+
 export CP_CONTEST_FETCH_CMD="$fetch"
 export CP_CONTEST_OJ_CMD="$oj"
 export CP_CONTEST_SLEEP=0
@@ -161,8 +190,43 @@ out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 996)
 [[ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" -eq 1 ]]
 
 echo "== エディタ起動側も同じパスを使う =="
+# /usr/bin をそのまま PATH にすると、ホストの python3 が AtCoder へ接続する。
+# code や cursor が /usr/bin にあると、移動先を表示する分岐にも入らない。
+# 必要なコマンドだけ通し、curl 等は失敗スタブの後ろに本物を置く。
+tool_bin="$work/tools"
+mkdir -p "$tool_bin"
+for name in env bash sh mktemp tail rm cp mkdir cat sleep chmod grep tr head ln ls uname dirname readlink; do
+  for src in "/usr/bin/$name" "/bin/$name"; do
+    if [[ -x "$src" ]]; then
+      ln -s "$src" "$tool_bin/$name"
+      break
+    fi
+  done
+done
+for name in bash mktemp cp mkdir rm cat tail tr; do
+  if [[ ! -x "$tool_bin/$name" ]]; then
+    echo "テストに $name が必要です" >&2
+    exit 1
+  fi
+done
+editor_path="$net_block:$net_behind:$tool_bin"
+[[ "$(PATH="$editor_path" command -v curl)" == "$net_block/curl" ]]
+[[ "$(PATH="$editor_path" command -v python3)" == "$net_block/python3" ]]
+if [[ -e "$net_behind/curl" ]]; then
+  behind=$(PATH="$editor_path" bash -c 'IFS=:; set -- $PATH; shift; PATH="$*"; command -v curl')
+  [[ "$behind" == "$net_behind/curl" ]]
+fi
+[[ -z "$(PATH="$editor_path" command -v code || true)" ]]
+[[ -z "$(PATH="$editor_path" command -v cursor || true)" ]]
+: >"$CP_NET_DENY_LOG"
 status=0
-msg=$(PATH="/usr/bin:/bin" "$CP_PROJECT_ROOT/scripts/prepare-and-open" "995" 2>&1) || status=$?
+msg=$(PATH="$editor_path" "$CP_PROJECT_ROOT/scripts/prepare-and-open" "995" 2>&1) || status=$?
 [[ "$status" -eq 0 ]]
 printf '%s\n' "$msg" | grep -F "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" >/dev/null
 [[ -f "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" ]]
+[[ "$(cat "$CP_PROJECT_ROOT/work/abc995/a/test/sample-1.in")" == "2 3" ]]
+if [[ -s "$CP_NET_DENY_LOG" ]]; then
+  echo "ネットワーク用コマンドが呼ばれました:" >&2
+  cat "$CP_NET_DENY_LOG" >&2
+  exit 1
+fi
