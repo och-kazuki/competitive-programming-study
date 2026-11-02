@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# ストレステストが、一致・不一致・実行時エラー・タイムアウトを判別することを確認する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+root="$CP_PROJECT_ROOT"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+copy_case() {
+  local name="$1"
+  rm -rf "$work/$name"
+  mkdir -p "$work/$name"
+  cp "$root/tests/stress/$name/"* "$work/$name/"
+}
+
+echo "== 一致するストレステスト =="
+copy_case ok
+CP_STRESS_COUNT=20 bash "$root/scripts/stress" "$work/ok" >"$work/ok.out"
+grep -q '一致: 20 件' "$work/ok.out"
+[[ ! -e "$work/ok/test" ]]
+[[ ! -e "$work/ok/stress" ]]
+
+echo "== 不一致の反例を残す =="
+copy_case bad
+set +e
+CP_STRESS_COUNT=5 bash "$root/scripts/stress" "$work/bad" >"$work/bad.out" 2>"$work/bad.err"
+status=$?
+set -e
+[[ "$status" -eq 1 ]]
+grep -q '不一致: seed=1' "$work/bad.err"
+[[ "$(cat "$work/bad/stress/1.in")" == "1" ]]
+[[ "$(cat "$work/bad/stress/1.naive.out")" == "1" ]]
+[[ "$(cat "$work/bad/stress/1.sol.out")" == "2" ]]
+[[ "$(cat "$work/bad/test/sample-1.in")" == "1" ]]
+[[ "$(cat "$work/bad/test/sample-1.out")" == "1" ]]
+[[ ! -e "$work/bad/stress/2.in" ]]
+
+echo "== 実行時エラーで止まる =="
+copy_case crash
+set +e
+CP_STRESS_COUNT=3 bash "$root/scripts/stress" "$work/crash" >"$work/crash.out" 2>"$work/crash.err"
+status=$?
+set -e
+[[ "$status" -eq 1 ]]
+grep -q '実行時エラー: seed=1' "$work/crash.err"
+[[ -f "$work/crash/stress/1.in" ]]
+[[ -f "$work/crash/test/sample-1.out" ]]
+
+echo "== タイムアウトで止まる =="
+copy_case slow
+set +e
+CP_STRESS_TIMEOUT=0.4 CP_STRESS_COUNT=2 bash "$root/scripts/stress" "$work/slow" >"$work/slow.out" 2>"$work/slow.err"
+status=$?
+set -e
+[[ "$status" -eq 1 ]]
+grep -q 'タイムアウト: seed=1' "$work/slow.err"
+[[ -f "$work/slow/stress/1.in" ]]
+
+echo "== ストレステストの既定は通常ビルド =="
+mode_dir="$work/mode"
+mkdir -p "$mode_dir" "$work/bin"
+cp "$root/tests/stress/ok/gen.py" "$root/tests/stress/ok/a.cpp" "$root/tests/stress/ok/naive.cpp" "$mode_dir/"
+real_gxx=$(command -v g++)
+cat >"$work/bin/g++" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$CP_GXX_LOG"
+exec "$CP_REAL_GXX" "$@"
+EOF
+chmod +x "$work/bin/g++"
+: >"$work/gxx.log"
+PATH="$work/bin:$PATH" CP_GXX_LOG="$work/gxx.log" CP_REAL_GXX="$real_gxx" \
+  CP_STRESS_COUNT=1 bash "$root/scripts/stress" "$mode_dir" >/dev/null
+grep -q -- '-O2' "$work/gxx.log"
+if grep -q 'fsanitize' "$work/gxx.log"; then
+  echo "既定のストレステストにサニタイザが付いています" >&2
+  exit 1
+fi
+: >"$work/gxx.log"
+PATH="$work/bin:$PATH" CP_GXX_LOG="$work/gxx.log" CP_REAL_GXX="$real_gxx" \
+  CP_CXX_MODE=debug CP_STRESS_COUNT=1 bash "$root/scripts/stress" "$mode_dir" >/dev/null
+grep -q 'fsanitize' "$work/gxx.log"
+grep -q 'DLOCAL' "$work/gxx.log"
+
+echo "== ひな形は無いときだけ置く =="
+init_dir="$work/init"
+mkdir -p "$init_dir"
+bash "$root/scripts/stress-init" "$init_dir" >"$work/init.out"
+[[ -f "$init_dir/gen.py" ]]
+[[ -f "$init_dir/naive.cpp" ]]
+printf 'KEEP\n' >"$init_dir/gen.py"
+bash "$root/scripts/stress-init" "$init_dir" >"$work/init2.out"
+[[ "$(cat "$init_dir/gen.py")" == "KEEP" ]]
+grep -q 'すでにあります' "$work/init2.out"

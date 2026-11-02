@@ -44,6 +44,16 @@ runcpp-release *args:
 oj-py dir=".":
     "{{root}}/scripts/oj-test" py "{{dir}}"
 
+# gen と naive を、無いときだけ今のディレクトリへ置く。
+[no-cd]
+stress-init:
+    "{{root}}/scripts/stress-init"
+
+# 本解と愚直解を繰り返して比べる。例: just stress 100
+[no-cd]
+stress times="100":
+    CP_STRESS_COUNT="{{times}}" "{{root}}/scripts/stress"
+
 # 引用符の include を展開して標準出力へ出す。
 [no-cd]
 bundle src:

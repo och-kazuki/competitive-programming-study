@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# 生成器と愚直解を本解と比べる。食い違い、実行時エラー、タイムアウトで止まる。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+dir="${1:-.}"
+dir=$(cd "$dir" && pwd)
+count="${CP_STRESS_COUNT:-100}"
+limit="${CP_STRESS_TIMEOUT:-2}"
+
+if [[ ! "$count" =~ ^[1-9][0-9]*$ ]]; then
+  echo "回数は正の整数です: $count" >&2
+  exit 2
+fi
+
+pick() {
+  local base="$1"
+  if [[ -f "$dir/$base.cpp" ]]; then
+    printf '%s\n' cpp
+  elif [[ -f "$dir/$base.py" ]]; then
+    printf '%s\n' py
+  else
+    printf '%s\n' ""
+  fi
+}
+
+gen_kind=$(pick gen)
+naive_kind=$(pick naive)
+if [[ -z "$gen_kind" || -z "$naive_kind" ]]; then
+  echo "gen.py か gen.cpp と、naive.py か naive.cpp が必要です: $dir" >&2
+  echo "ひな形は just stress-init で置けます。" >&2
+  exit 2
+fi
+if [[ -f "$dir/a.cpp" ]]; then
+  sol_kind=cpp
+elif [[ -f "$dir/a.py" ]]; then
+  sol_kind=py
+else
+  echo "a.cpp か a.py が必要です: $dir" >&2
+  exit 2
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+cat >"$work/run.py" <<'PY'
+import subprocess
+import sys
+
+limit = float(sys.argv[1])
+stdout_path = sys.argv[2]
+stderr_path = sys.argv[3]
+command = sys.argv[4:]
+try:
+    with open(stdout_path, "wb") as stdout, open(stderr_path, "wb") as stderr:
+        completed = subprocess.run(
+            command,
+            stdin=sys.stdin.buffer,
+            stdout=stdout,
+            stderr=stderr,
+            timeout=limit,
+            check=False,
+        )
+except subprocess.TimeoutExpired:
+    sys.exit(124)
+sys.exit(completed.returncode)
+PY
+
+compile_cpp() {
+  local src="$1"
+  local out="$2"
+  # 既定は通常ビルド。回数を回すのが目的なので、サニタイザは付けない。
+  # CP_CXX_MODE=debug を付けたときだけ、デバッグビルドで落ちる反例も探す。
+  local mode="${CP_CXX_MODE:-release}"
+  CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$out" "$src"
+}
+
+if [[ "$gen_kind" == cpp ]]; then
+  compile_cpp "$dir/gen.cpp" "$work/gen"
+fi
+if [[ "$naive_kind" == cpp ]]; then
+  compile_cpp "$dir/naive.cpp" "$work/naive"
+fi
+if [[ "$sol_kind" == cpp ]]; then
+  compile_cpp "$dir/a.cpp" "$work/sol"
+fi
+
+python_bin="$root/.venv/bin/python"
+if [[ ! -x "$python_bin" ]]; then
+  python_bin=$(command -v python3)
+fi
+
+run_prog() {
+  local kind="$1"
+  local name="$2"
+  local input="$3"
+  local stdout="$4"
+  local stderr="$5"
+  if [[ "$kind" == cpp ]]; then
+    python3 "$work/run.py" "$limit" "$stdout" "$stderr" "$work/$name" <"$input"
+  else
+    python3 "$work/run.py" "$limit" "$stdout" "$stderr" "$python_bin" "$dir/$name.py" <"$input"
+  fi
+}
+
+next_sample() {
+  local n=1
+  while [[ -e "$dir/test/sample-$n.in" || -e "$dir/test/sample-$n.out" ]]; do
+    n=$((n + 1))
+  done
+  printf '%s\n' "$n"
+}
+
+save_input() {
+  local seed="$1"
+  mkdir -p "$dir/stress"
+  cp "$work/input" "$dir/stress/$seed.in"
+}
+
+seed=1
+while [[ "$seed" -le "$count" ]]; do
+  if [[ "$gen_kind" == cpp ]]; then
+    if ! "$work/gen" "$seed" >"$work/input"; then
+      echo "生成器が失敗しました: seed=$seed" >&2
+      exit 1
+    fi
+  else
+    if ! "$python_bin" "$dir/gen.py" "$seed" >"$work/input"; then
+      echo "生成器が失敗しました: seed=$seed" >&2
+      exit 1
+    fi
+  fi
+
+  set +e
+  run_prog "$naive_kind" naive "$work/input" "$work/naive.out" "$work/naive.err"
+  naive_status=$?
+  run_prog "$sol_kind" sol "$work/input" "$work/sol.out" "$work/sol.err"
+  sol_status=$?
+  set -e
+
+  if [[ "$naive_status" -eq 124 || "$sol_status" -eq 124 ]]; then
+    save_input "$seed"
+    echo "タイムアウト: seed=$seed（制限 ${limit} 秒）" >&2
+    echo "入力: $dir/stress/$seed.in" >&2
+    exit 1
+  fi
+  if [[ "$naive_status" -ne 0 || "$sol_status" -ne 0 ]]; then
+    save_input "$seed"
+    cp "$work/naive.err" "$dir/stress/$seed.naive.err" 2>/dev/null || true
+    cp "$work/sol.err" "$dir/stress/$seed.sol.err" 2>/dev/null || true
+    echo "実行時エラー: seed=$seed naive=$naive_status sol=$sol_status" >&2
+    echo "入力: $dir/stress/$seed.in" >&2
+    if [[ "$naive_status" -eq 0 ]]; then
+      sample=$(next_sample)
+      mkdir -p "$dir/test"
+      cp "$work/input" "$dir/test/sample-$sample.in"
+      cp "$work/naive.out" "$dir/test/sample-$sample.out"
+      echo "反例: $dir/test/sample-$sample.in" >&2
+    fi
+    exit 1
+  fi
+  if ! cmp -s "$work/naive.out" "$work/sol.out"; then
+    save_input "$seed"
+    cp "$work/naive.out" "$dir/stress/$seed.naive.out"
+    cp "$work/sol.out" "$dir/stress/$seed.sol.out"
+    sample=$(next_sample)
+    mkdir -p "$dir/test"
+    cp "$work/input" "$dir/test/sample-$sample.in"
+    cp "$work/naive.out" "$dir/test/sample-$sample.out"
+    echo "不一致: seed=$seed" >&2
+    echo "入力: $dir/stress/$seed.in" >&2
+    echo "愚直: $dir/stress/$seed.naive.out" >&2
+    echo "本解: $dir/stress/$seed.sol.out" >&2
+    echo "反例: $dir/test/sample-$sample.in" >&2
+    exit 1
+  fi
+  seed=$((seed + 1))
+done
+
+echo "一致: ${count} 件"
