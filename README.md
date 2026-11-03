@@ -100,6 +100,39 @@ Python の解析は basedpyright、整形は Ruff です。インタプリタは
 }
 ```
 
+### C++ のスニペット
+
+グリッドの 4 近傍・8 近傍の `dx` / `dy` と範囲外判定 `out_grid` は、共通ヘッダではなく Zed のスニペット `snippets/zed/c++.json` にあります。必要な問題の `a.cpp` にだけ展開します。
+
+| prefix | 中身 | 置く場所 |
+| --- | --- | --- |
+| `grid4` | 4 近傍の `dx[4]` / `dy[4]`。順序は R, L, D, U（右, 左, 下, 上） | `main` の外（include の後）か `main` の中 |
+| `grid8` | 8 近傍の `dx[8]` / `dy[8]`。順序は R, DR, D, DL, L, UL, U, UR（右から時計回り） | `main` の外（include の後）か `main` の中 |
+| `outgrid` | `inline bool out_grid(int y, int x, int h, int w)`。グリッドの外なら `true` | 関数定義なので必ず `main` の外（include の後） |
+
+- `x` は列（`+1` で右）、`y` は行（`+1` で下）です。`out_grid` の引数は行 `y`、列 `x`、行数 `h`、列数 `w` の順です。
+- `grid4` と `grid8` は同じ名前 `dx` / `dy` を定義するので、1 つのファイルではどちらか片方だけを使います。
+- `dx` / `dy` を使う関数が `main` の外にあるときは、`dx` / `dy` も `main` の外に置きます。
+
+Zed はリポジトリ内のスニペットファイルを自動では読みません。Zed のユーザー設定にあるスニペットファイルへ、手で入れてください。スクリプトでユーザー設定を書き換えることはしません。
+
+1. Zed のコマンドパレットで `snippets: configure snippets` を実行し、言語に C++ を選びます。C++ 用のスニペットファイル（`c++.json`）が開きます。Linux と macOS では `~/.config/zed/snippets/` の下です。フォルダは `snippets: open folder` でも開けます。
+2. ファイルが空なら、`snippets/zed/c++.json` の中身をそのまま貼ります。
+3. すでに自分のスニペットがあるときは、外側の `{ }` の中に `grid4`、`grid8`、`outgrid` の 3 項目だけを足します。既存の項目は消しません。同じ名前の項目があるときは、どちらを残すか決めてから片方の名前を変えます。
+4. 保存します。
+
+WSL2 で Windows 版の Zed を使うときは、スニペットファイルは WSL 側ではなく Zed 本体の設定フォルダにあるはずです。その場所は公式ドキュメントで確認できていないため、パスを手で探さずに `snippets: configure snippets` か `snippets: open folder` で開いてください。
+
+使い方です。
+
+1. 置きたい場所で prefix（`grid4` など）を打ちます。補完メニューにスニペットが出たら選んで確定します。
+2. メニューが出ないときは `ctrl-space`（`editor: show completions`）で開きます。Vim モードの挿入モードでは `ctrl-x ctrl-o` でも開けます。
+3. 確定後、カーソルは本体の最後（`$0` の位置）に移ります。
+
+確定とプレースホルダ移動のキーは、公式ドキュメントのスニペットのページには書かれていません。Zed の既定キーマップでは、補完の確定が `enter`、スニペットの次のプレースホルダが `tab`、前が `shift-tab` です。自分の `keymap.json` で変えている場合はそちらに従います。設定 `snippet_sort_order` を `none` にしていると、スニペットは補完メニューに出ません。
+
+`just check` は `scripts/check-snippets` で、この JSON が読めること、各本体が上の場所でコンパイルできること、方向と `out_grid` の境界、提出用に展開したあともコンパイルできることを確かめます。
+
 ## ディレクトリ構成
 
 ```text
@@ -116,6 +149,7 @@ justfile            日常的に使うコマンド
 flake.nix           Nix の devShell
 pyproject.toml      Python（uv）
 .zed/               Zed の設定とタスク
+snippets/zed/       Zed に手で入れる C++ スニペット（c++.json）
 .clangd             clangd へ渡す追加フラグ
 ```
 
@@ -217,10 +251,12 @@ just copy
 just check
 ```
 
-テンプレートのコンパイル、C++ と Python のライブラリテスト、`ruff`、`pyright`、ローカルサンプルに対する `oj` を実行します。
+テンプレートのコンパイル、C++ と Python のライブラリテスト、Zed のスニペットの検査、`ruff`、`pyright`、ローカルサンプルに対する `oj` を実行します。
 
 GitHub Actions では `nix flake check` のあと、同じ devShell で `just check` を実行します。
 
 ## ライセンス
 
 [MIT License](LICENSE) です。Copyright (c) 2026 Kazuki Ochiai。
+
+`library/cpp/template.hpp` と `templates/a.cpp` の先頭には、このリポジトリの URL と、AI によるコード生成を利用した部分を含むことを書いたコメントがあります。提出用に展開したコードにも残ります。
