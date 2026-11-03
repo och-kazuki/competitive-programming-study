@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VS Code / Cursor からコンテストを用意し、解答ファイルを開く。
+# コンテストを用意し、Zed で解答ファイルを開く。
 set -euo pipefail
 
 # shellcheck disable=SC1091
@@ -28,11 +28,9 @@ if [[ -z "$dest" || ! -f "$dest/a.cpp" ]]; then
   exit "$status"
 fi
 
-if command -v cursor >/dev/null 2>&1; then
-  cursor -r "$dest/a.cpp" || true
-elif command -v code >/dev/null 2>&1; then
-  code -r "$dest/a.cpp" || true
+if command -v zed >/dev/null 2>&1; then
+  zed "$dest/a.cpp" || true
 else
-  echo "code も cursor もないため、ファイルは開きません: $dest/a.cpp" >&2
+  echo "zed がないため、ファイルは開きません: $dest/a.cpp" >&2
 fi
 exit "$status"

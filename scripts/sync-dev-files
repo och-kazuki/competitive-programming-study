@@ -13,6 +13,7 @@ trap 'rm -f "$tmp"' EXIT
 {
   printf '%s\n' \
     "-std=gnu++20" \
+    "-DLOCAL" \
     "-Wall" \
     "-Wextra" \
     "-O2" \

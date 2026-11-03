@@ -191,7 +191,7 @@ out=$("$CP_PROJECT_ROOT/scripts/prepare-contest" abc 996)
 
 echo "== エディタ起動側も同じパスを使う =="
 # /usr/bin をそのまま PATH にすると、ホストの python3 が AtCoder へ接続する。
-# code や cursor が /usr/bin にあると、移動先を表示する分岐にも入らない。
+# zed が PATH にあると、移動先を表示する分岐にも入らない。
 # 必要なコマンドだけ通し、curl 等は失敗スタブの後ろに本物を置く。
 tool_bin="$work/tools"
 mkdir -p "$tool_bin"
@@ -216,8 +216,7 @@ if [[ -e "$net_behind/curl" ]]; then
   behind=$(PATH="$editor_path" bash -c 'IFS=:; set -- $PATH; shift; PATH="$*"; command -v curl')
   [[ "$behind" == "$net_behind/curl" ]]
 fi
-[[ -z "$(PATH="$editor_path" command -v code || true)" ]]
-[[ -z "$(PATH="$editor_path" command -v cursor || true)" ]]
+[[ -z "$(PATH="$editor_path" command -v zed || true)" ]]
 : >"$CP_NET_DENY_LOG"
 status=0
 msg=$(PATH="$editor_path" "$CP_PROJECT_ROOT/scripts/prepare-and-open" "995" 2>&1) || status=$?
