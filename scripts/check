@@ -61,6 +61,10 @@ if "using vi = vector<ll>;" not in text:
     sys.exit("テンプレートヘッダが展開されていません")
 if "int main()" not in text:
     sys.exit("main がありません")
+if "// Repository: https://github.com/och-kazuki/competitive-programming-study" not in text:
+    sys.exit("出典コメント（Repository）が残っていません")
+if "AIによるコード生成を利用した部分が含まれます" not in text:
+    sys.exit("出典コメント（AI 生成の注記）が残っていません")
 PY
 # 展開後はリポジトリをインクルードパスに入れなくてもコンパイルできる。
 g++ -std=gnu++20 -O2 -Wall -Wextra -o "$tmpdir/bundled" "$bundled"
@@ -74,6 +78,9 @@ bash "$CP_PROJECT_ROOT/scripts/check-stress"
 
 echo "== Zed の設定 =="
 bash "$CP_PROJECT_ROOT/scripts/check-zed"
+
+echo "== Zed のスニペット =="
+bash "$CP_PROJECT_ROOT/scripts/check-snippets"
 
 echo "== ruff =="
 export RUFF_CACHE_DIR="$tmpdir/ruff-cache"

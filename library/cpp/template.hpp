@@ -1,3 +1,5 @@
+// Repository: https://github.com/och-kazuki/competitive-programming-study
+// このテンプレートには、AIによるコード生成を利用した部分が含まれます。
 #pragma once
 
 #include <bits/stdc++.h>
@@ -293,11 +295,5 @@ void show_args(const char *names, const T &value, const Args &...rest) {
 
 #endif
 
-int dx[4] = {1, -1, 0, 0}; // R, L, D, U
-int dy[4] = {0, 0, 1, -1}; // R, L, D, U
-// int dx[8] = {1, 1, 0, -1, -1, -1, 0, 1};
-// int dy[8] = {0, 1, 1, 1, 0, -1, -1, -1};
-
-inline bool out_grid(int y, int x, int h, int w) {
-  return !(0 <= y && y < h && 0 <= x && x < w);
-}
+// グリッドの dx / dy と out_grid は Zed のスニペット（snippets/zed/c++.json）です。
+// 必要な問題の a.cpp にだけ展開します。

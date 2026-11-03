@@ -1,0 +1,36 @@
+{
+  "grid4": {
+    "prefix": "grid4",
+    "body": [
+      "// 4 近傍。順序は R, L, D, U（右, 左, 下, 上）。",
+      "// x は列（+1 で右）、y は行（+1 で下）。grid8 と同じ名前なので片方だけ置く。",
+      "int dx[4] = {1, -1, 0, 0}; // R, L, D, U",
+      "int dy[4] = {0, 0, 1, -1}; // R, L, D, U",
+      "$0"
+    ],
+    "description": "4 近傍の dx, dy（R, L, D, U の順。x は列、y は行）。grid8 とは同時に使わない"
+  },
+  "grid8": {
+    "prefix": "grid8",
+    "body": [
+      "// 8 近傍。順序は R, DR, D, DL, L, UL, U, UR（右から時計回り。y は下向き）。",
+      "// x は列（+1 で右）、y は行（+1 で下）。grid4 と同じ名前なので片方だけ置く。",
+      "int dx[8] = {1, 1, 0, -1, -1, -1, 0, 1};",
+      "int dy[8] = {0, 1, 1, 1, 0, -1, -1, -1};",
+      "$0"
+    ],
+    "description": "8 近傍の dx, dy（右から時計回り。x は列、y は行）。grid4 とは同時に使わない"
+  },
+  "outgrid": {
+    "prefix": "outgrid",
+    "body": [
+      "// (y, x) が H 行 W 列のグリッドの外なら true。y は行 [0, h)、x は列 [0, w)。",
+      "// 関数定義なので main の外（include の後）に置く。",
+      "inline bool out_grid(int y, int x, int h, int w) {",
+      "  return !(0 <= y && y < h && 0 <= x && x < w);",
+      "}",
+      "$0"
+    ],
+    "description": "グリッドの範囲外判定 out_grid(y, x, h, w)。引数は行 y、列 x の順。main の外に置く"
+  }
+}

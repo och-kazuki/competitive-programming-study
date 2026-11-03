@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# snippets/zed/c++.json を検査する。
+# JSON として読めること、各スニペットの形、既定値で展開した本体が説明どおりの位置でコンパイルできること、
+# 方向の順序と out_grid の境界、バンドル後の出典コメントを確かめる。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+root="$CP_PROJECT_ROOT"
+cxx="$root/scripts/cp-gxx"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+echo "== スニペットの JSON =="
+# 各スニペットを、プレースホルダを既定値に置き換えた C++ 断片として書き出す。
+python3 - "$root/snippets/zed/c++.json" "$work" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+path, out = Path(sys.argv[1]), Path(sys.argv[2])
+data = json.loads(path.read_text(encoding="utf-8"))
+expected = {"grid4", "grid8", "outgrid"}
+assert set(data) == expected, f"スニペット名が想定と違います: {sorted(data)}"
+
+token = re.compile(r"\\\$|\$\{(\d+):([^}]*)\}|\$\{(\d+)\}|\$(\d+)|\$")
+
+
+def expand(line: str) -> tuple[str, set[int]]:
+    stops: set[int] = set()
+
+    def repl(m: re.Match[str]) -> str:
+        if m.group(0) == "\\$":
+            return "$"
+        if m.group(0) == "$":
+            raise AssertionError(f"エスケープしていない $ があります: {line!r}")
+        n = m.group(1) or m.group(3) or m.group(4)
+        stops.add(int(n))
+        return m.group(2) or ""
+
+    return token.sub(repl, line), stops
+
+
+for name, snip in data.items():
+    assert snip.get("prefix") == name, f"{name}: prefix は名前と同じにします"
+    assert isinstance(snip.get("description"), str) and snip["description"], name
+    body = snip.get("body")
+    assert isinstance(body, list) and all(isinstance(x, str) for x in body), name
+    lines, stops = [], set()
+    for line in body:
+        text, s = expand(line)
+        lines.append(text)
+        stops |= s
+    assert 0 in stops, f"{name}: 最後のカーソル位置 $0 がありません"
+    (out / f"{name}.inc").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"{name}: {len(body)} 行")
+PY
+
+echo "== テンプレートにグリッドの定義が残っていない =="
+if grep -nE '^\s*(int|inline bool) +(dx|dy|out_grid)\b' "$root/library/cpp/template.hpp"; then
+  echo "template.hpp に dx / dy / out_grid の定義が残っています" >&2
+  exit 1
+fi
+
+# 検査用のプログラムを組み立てる。$1 は近傍（grid4 か grid8）、$2 は dx / dy を置く場所（global か main）。
+make_prog() {
+  local grid="$1" where="$2" n
+  if [[ "$grid" == grid4 ]]; then n=4; else n=8; fi
+  {
+    echo '#include "library/cpp/template.hpp"'
+    echo
+    cat "$work/outgrid.inc"
+    [[ "$where" == global ]] && cat "$work/$grid.inc"
+    cat <<CPP
+static int failures = 0;
+static void expect(bool ok, const char *msg) {
+  if (!ok) {
+    fprintf(stderr, "fail: %s\n", msg);
+    ++failures;
+  }
+}
+
+int main() {
+CPP
+    [[ "$where" == main ]] && sed 's/^/  /' "$work/$grid.inc"
+    cat <<CPP
+  // x は列、y は行。R は x+1、D は y+1。
+  const int n = $n;
+  vector<pair<int, int>> got;
+  for (int k = 0; k < n; k++) got.emplace_back(dx[k], dy[k]);
+  vector<pair<int, int>> want;
+  if (n == 4) {
+    want = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}; // R, L, D, U
+  } else {
+    want = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+  }
+  expect(got == want, "方向の順序");
+  set<pair<int, int>> uniq(got.begin(), got.end());
+  expect((int)uniq.size() == n, "方向が重複しない");
+  for (auto [x, y] : got) expect(max(abs(x), abs(y)) == 1, "隣のマスだけ");
+
+  // 3 行 4 列。
+  const int h = 3, w = 4;
+  expect(!out_grid(0, 0, h, w), "左上は中");
+  expect(!out_grid(h - 1, w - 1, h, w), "右下は中");
+  expect(!out_grid(2, 1, h, w), "y=2 は行の中");
+  expect(out_grid(-1, 0, h, w), "y=-1 は外");
+  expect(out_grid(0, -1, h, w), "x=-1 は外");
+  expect(out_grid(h, 0, h, w), "y=h は外");
+  expect(out_grid(0, w, h, w), "x=w は外");
+  expect(!out_grid(1, 3, h, w), "x=3 は列の中");
+  expect(out_grid(3, 1, h, w), "y と x を取り違えると外");
+  expect(out_grid(0, 0, 0, 0), "空のグリッド");
+
+  // 典型の使い方: 中央 (1, 1) から隣を数える。
+  int inside = 0;
+  for (int k = 0; k < n; k++) {
+    int ny = 1 + dy[k], nx = 1 + dx[k];
+    if (out_grid(ny, nx, h, w)) continue;
+    inside++;
+  }
+  expect(inside == n, "中央から見た隣はすべて中");
+  // 角 (0, 0) から見た隣は 4 近傍で 2 個、8 近傍で 3 個。
+  int corner = 0;
+  for (int k = 0; k < n; k++) corner += !out_grid(dy[k], dx[k], h, w);
+  expect(corner == (n == 4 ? 2 : 3), "角から見た隣");
+  if (failures) return 1;
+  puts("ok");
+  return 0;
+}
+CPP
+  } >"$work/prog_${grid}_${where}.cpp"
+}
+
+for grid in grid4 grid8; do
+  for where in global main; do
+    echo "== $grid（dx / dy を $where に置く）+ outgrid =="
+    make_prog "$grid" "$where"
+    src="$work/prog_${grid}_${where}.cpp"
+    bash "$cxx" -Werror -o "$work/bin" "$src"
+    "$work/bin" | grep -qx ok
+    CP_CXX_MODE=debug bash "$cxx" -Werror -o "$work/bin_debug" "$src"
+    "$work/bin_debug" | grep -qx ok
+    echo "== $grid（$where）をバンドルしてコンパイルする =="
+    python3 "$root/scripts/bundle_cpp.py" -I "$root" "$src" >"$work/bundled.cpp"
+    grep -qxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$work/bundled.cpp"
+    grep -qxF '// このテンプレートには、AIによるコード生成を利用した部分が含まれます。' "$work/bundled.cpp"
+    g++ -std=gnu++20 -O2 -Wall -Wextra -Werror -o "$work/bin_bundled" "$work/bundled.cpp"
+    "$work/bin_bundled" | grep -qx ok
+  done
+done
+
+echo "== grid4 と grid8 は同時に置けない =="
+{
+  echo '#include "library/cpp/template.hpp"'
+  cat "$work/grid4.inc" "$work/grid8.inc"
+  echo 'int main() { return 0; }'
+} >"$work/both.cpp"
+if bash "$cxx" -o "$work/both" "$work/both.cpp" 2>"$work/both.err"; then
+  echo "grid4 と grid8 を両方置いてもコンパイルできてしまいました" >&2
+  exit 1
+fi
+grep -q 'redefinition\|conflicting declaration' "$work/both.err"
+
+echo "== 出典コメント =="
+for f in library/cpp/template.hpp templates/a.cpp; do
+  grep -qxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$root/$f"
+  grep -qxF '// このテンプレートには、AIによるコード生成を利用した部分が含まれます。' "$root/$f"
+done
+python3 "$root/scripts/bundle_cpp.py" -I "$root" "$root/templates/a.cpp" >"$work/a_bundled.cpp"
+count=$(grep -cxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$work/a_bundled.cpp")
+# a.cpp 自身の行と、展開した template.hpp の行の 2 つ。
+[[ "$count" == 2 ]]
+g++ -std=gnu++20 -O2 -Wall -Wextra -Werror -o "$work/a_bundled" "$work/a_bundled.cpp"
+
+echo "スニペットの検査に通りました"
