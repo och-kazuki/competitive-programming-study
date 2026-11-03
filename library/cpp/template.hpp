@@ -294,6 +294,3 @@ void show_args(const char *names, const T &value, const Args &...rest) {
 #define SHOW(...) ((void)0)
 
 #endif
-
-// グリッドの dx / dy と out_grid は Zed のスニペット（snippets/zed/c++.json）です。
-// 必要な問題の a.cpp にだけ展開します。
