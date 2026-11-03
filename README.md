@@ -259,4 +259,4 @@ GitHub Actions では `nix flake check` のあと、同じ devShell で `just ch
 
 [MIT License](LICENSE) です。Copyright (c) 2026 Kazuki Ochiai。
 
-`library/cpp/template.hpp` と `templates/a.cpp` の先頭には、このリポジトリの URL と、AI によるコード生成を利用した部分を含むことを書いたコメントがあります。提出用に展開したコードにも残ります。
+`library/cpp/template.hpp` と `templates/a.cpp` の先頭には、このリポジトリの URL を書いたコメントがあります。提出用に展開したコードにも残ります。
