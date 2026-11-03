@@ -1,5 +1,4 @@
 // Repository: https://github.com/och-kazuki/competitive-programming-study
-// このテンプレートには、AIによるコード生成を利用した部分が含まれます。
 #pragma once
 
 #include <bits/stdc++.h>
