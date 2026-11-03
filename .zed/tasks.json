@@ -1,0 +1,139 @@
+[
+  {
+    "label": "C++: 開いているファイルを実行",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runcpp", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "C++: 開いているファイルを通常ビルドで実行",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "runcpp-release", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "Python: 開いているファイルを実行",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runpy", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "C++: このフォルダの a.cpp を実行",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runcpp", "$ZED_DIRNAME/a.cpp"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "Python: このフォルダの a.py を実行",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runpy", "$ZED_DIRNAME/a.py"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "oj: サンプルテスト (C++)",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-cpp", "$ZED_DIRNAME"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "oj: サンプルテスト (C++ 通常ビルド)",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-cpp-release", "$ZED_DIRNAME"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "oj: サンプルテスト (Python)",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-py", "$ZED_DIRNAME"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "コンテストを準備",
+    "command": "bash",
+    "args": [
+      "-lc",
+      "printf '%s' 'コンテスト（例: 400、400 e、arc190）: ' >&2; IFS= read -r spec && nix develop \"$ZED_WORKTREE_ROOT\" -c bash \"$ZED_WORKTREE_ROOT/scripts/prepare-and-open\" \"$spec\""
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always"
+  },
+  {
+    "label": "C++: 提出用コードをコピー",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "copy", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "C++: 提出用ファイルを作る",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "submit-file", "$ZED_DIRNAME"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "ストレステスト",
+    "command": "bash",
+    "args": [
+      "-lc",
+      "printf '%s' '試行回数 [100]: ' >&2; IFS= read -r n; n=${n:-100}; nix develop \"$ZED_WORKTREE_ROOT\" -c just stress \"$n\""
+    ],
+    "cwd": "${ZED_DIRNAME:$ZED_WORKTREE_ROOT}",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "save": "current"
+  },
+  {
+    "label": "ストレステストのひな形を置く",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "stress-init"],
+    "cwd": "${ZED_DIRNAME:$ZED_WORKTREE_ROOT}",
+    "use_new_terminal": true,
+    "reveal": "always"
+  },
+  {
+    "label": "環境ファイルを更新",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "sync"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always"
+  },
+  {
+    "label": "チェック",
+    "command": "nix",
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "check"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always"
+  }
+]

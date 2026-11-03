@@ -1,0 +1,34 @@
+{
+  "disable_ai": true,
+  "languages": {
+    "C++": {
+      "tab_size": 2,
+      "language_servers": ["clangd", "..."]
+    },
+    "Python": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "language_servers": ["basedpyright", "ruff", "..."]
+    }
+  },
+  "lsp": {
+    "clangd": {
+      "binary": {
+        "arguments": [
+          "--background-index",
+          "--header-insertion=never",
+          "--query-driver=**/g++"
+        ]
+      }
+    },
+    "basedpyright": {
+      "settings": {
+        "python": {
+          "pythonPath": ".venv/bin/python"
+        },
+        "basedpyright.analysis.extraPaths": ["library/python"],
+        "basedpyright.analysis.diagnosticMode": "workspace"
+      }
+    }
+  }
+}

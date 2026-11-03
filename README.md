@@ -30,17 +30,7 @@ abc 400 b
 - オフラインで1問だけ空のフォルダが欲しいときは `just new abc400 a` です。
 - コンテスト後のメモは `notes/upsolve/abc400-a.md` です。書き方は [notes/upsolve/README.md](notes/upsolve/README.md) です。
 
-VS Code と Cursor では、タスク「コンテストを準備」に `400` や `400 e` を入れます。終わると `a.cpp` を開きます。提出は、開いているファイルに対するタスク「C++: 提出用コードをコピー」です。
-
-キーバインドの例です。ユーザー設定の `keybindings.json` に足すと、`Ctrl+Alt+C` でコピーできます。
-
-```json
-{
-  "key": "ctrl+alt+c",
-  "command": "workbench.action.tasks.runTask",
-  "args": "C++: 提出用コードをコピー"
-}
-```
+Zed では `task: spawn` からタスク「コンテストを準備」を選び、`400` や `400 e` を入力します。終わると `a.cpp` を開きます。提出はタスク「C++: 提出用コードをコピー」です。AI 機能はプロジェクト設定で無効です。
 
 ## セットアップ
 
@@ -66,8 +56,8 @@ nix develop
 
 初回は `uv sync` が走り、Python の開発依存（online-judge-tools）を `.venv` に入れます。あわせて `compile_flags.txt` を作ります。
 
-- `.venv` は Python 3.12 の仮想環境です。VS Code、Cursor、そのほかのエディタから同じインタプリタを選べます。
-- `compile_flags.txt` は clangd 用のコンパイルフラグです。AtCoder Library とこのリポジトリへのインクルードパスが入っています。Nix ストアの絶対パスを含むため、git では管理しません。
+- `.venv` は Python 3.12 の仮想環境です。Zed の basedpyright は `pyproject.toml` の `[tool.basedpyright]` からこのインタプリタと `library/python` を見ます。
+- `compile_flags.txt` は clangd 用のコンパイルフラグです。`-std=gnu++20`、`-DLOCAL`、AtCoder Library、このリポジトリへのインクルードパスが入っています。Nix ストアの絶対パスを含むため、git では管理しません。
 
 シェルでは次が使えます。
 
@@ -83,21 +73,32 @@ nix develop
 
 Nix は Windows ネイティブでは動きません。Windows では WSL2 の Linux にリポジトリを置き、その中で `nix develop` を使います。MSYS2 のシェルでは使いません。
 
-Visual Studio Code と Cursor で開くときは、WSL 拡張機能で WSL 側のフォルダを開きます。Windows 側のパスのまま開くと、統合ターミナルの `nix develop` もタスクも失敗します。
+Zed は WSL 側のフォルダを開きます。WSL のターミナルでリポジトリへ移動し、`zed .` とするか、Zed のフォルダ選択で WSL のパスを開いてください。Windows 側のパスのまま開くと、`nix` もタスクも失敗します。macOS での Zed の動作は未検証です。
 
 ### エディタ
 
-Visual Studio Code と Cursor は `.vscode/` を読みます。推奨拡張機能は clangd、Python、Pyright、Ruff、Just です。
+エディタは Zed です。設定は `.zed/settings.json` と `.zed/tasks.json` にあります。`disable_ai` は `true` なので、このプロジェクトでは Zed の AI 機能を使いません。
 
-統合ターミナルの既定プロファイルは `nix develop` です。Linux と macOS（WSL のターミナルも Linux です）では `nix develop ${workspaceFolder}` を起動します。開いたターミナルの中で `abc 400` や `just oj-cpp` を実行します。
+開き方は次のとおりです。
 
-タスクは、ターミナルが開発シェルでなくても `nix develop ${workspaceFolder} -c ...` で実行します。開いているファイルの実行、サンプルテスト、コンテストの準備、提出用コピー、環境ファイルの更新、チェックが対象です。
+1. WSL2 なら、上のとおり WSL 側のフォルダを Zed で開く。
+2. Zed のターミナルでリポジトリのルートへ行き、`nix develop` を実行する。`abc` や `just` はこの中で使います。
+3. タスクはコマンドパレットの `task: spawn` から選びます。タスク自体は `nix develop -c` で開発シェルに入ってから動くので、ターミナルがまだ開発シェルでなくても実行できます。
 
-clangd 拡張の実行ファイルは `scripts/editor-clangd` です。このスクリプトが `nix develop --command clangd` を起動するので、手元の clangd は使いません。補完の元になる `compile_flags.txt` は、開発シェルに入ったときと `just sync` で作ります。AtCoder Library とこのリポジトリへのインクルードパスが入っています。Nix ストアの絶対パスを含むため、git では管理しません。
+C++ の補完は clangd です。`.clangd` は `-std=gnu++20` と `-DLOCAL` を足します。インクルードパスは、開発シェルに入ったときと `just sync`、タスク「環境ファイルを更新」が作る `compile_flags.txt` に入ります。サニタイザと `_GLIBCXX_DEBUG` は `runcpp` のデバッグビルド用で、clangd のフラグには入れていません。clangd の実行ファイルを Nix のものに固定するときは、`lsp.clangd.binary.path` に `scripts/editor-clangd` の絶対パスを書きます。Zed はこの項目に絶対パスを要求します。このスクリプトは `nix develop --command clangd` を起動します。
 
-Python のインタプリタは `.venv/bin/python` です。`.venv` は開発シェルに入ったときの `uv sync` で作られます。Pyright はこのインタプリタと `pyproject.toml` の `[tool.pyright]` を見ます。
+Python の解析は basedpyright、整形は Ruff です。インタプリタは `.venv/bin/python`、追加パスは `library/python` です。どちらも `pyproject.toml` の `[tool.basedpyright]` に書いてあります。`.venv` は最初の `nix develop` で作られます。
 
-`compile_flags.txt` がまだ無いときは、ターミナルで一度 `nix develop` するか、タスク「環境ファイルを更新」を実行します。Neovim などを使う場合も、`nix develop` の中から clangd と pyright を起動します。
+キーバインドの例です。ユーザーの `keymap.json` に足すと、`ctrl-alt-c` でコピーのタスクを実行できます。
+
+```json
+{
+  "context": "Workspace",
+  "bindings": {
+    "ctrl-alt-c": ["task::Spawn", { "task_name": "C++: 提出用コードをコピー" }]
+  }
+}
+```
 
 ## ディレクトリ構成
 
@@ -114,7 +115,8 @@ scripts/            runcpp や runpy などの実装
 justfile            日常的に使うコマンド
 flake.nix           Nix の devShell
 pyproject.toml      Python（uv）
-.vscode/            VS Code / Cursor の設定
+.zed/               Zed の設定とタスク
+.clangd             clangd へ渡す追加フラグ
 ```
 
 `work/` だけを無視し、`templates/a.cpp` のような追跡したいファイルまで巻き込まないようにしています。
@@ -148,7 +150,7 @@ runcpp work/abc400/a/a.cpp
 runpy work/abc400/a/a.py
 ```
 
-標準入力はそのままプログラムへ渡ります。エディタでは、開いているファイル向けのタスクと、そのフォルダの `a.cpp` / `a.py` 向けのタスクがあります。
+標準入力はそのままプログラムへ渡ります。Zed では、開いているファイル向けのタスクと、そのフォルダの `a.cpp` / `a.py` 向けのタスクがあります。
 
 ### 3. サンプルをテストする
 
@@ -168,7 +170,7 @@ CP_CXX_MODE=release runcpp
 
 サニタイザは Linux と WSL2 で使います。macOS では Nix の g++ が AddressSanitizer をリンクできないことがあり、そのときは `CP_CXX_MODE=release` にします。`just copy` と `just submit-file` は通常ビルドのままなので、提出物にサニタイザは入りません。
 
-手で足すときは `test/sample-1.in` と `test/sample-1.out` です。タスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。通常ビルドのタスクは「oj: サンプルテスト (C++ 通常ビルド)」です。
+手で足すときは `test/sample-1.in` と `test/sample-1.out` です。Zed のタスク「oj: サンプルテスト (C++)」「oj: サンプルテスト (Python)」は、開いているファイルのフォルダをテストします。通常ビルドのタスクは「oj: サンプルテスト (C++ 通常ビルド)」です。
 
 ### ストレステスト
 
@@ -185,7 +187,7 @@ just stress 100
 
 C++ の生成器・愚直解・本解は、既定で通常ビルド（`-O2`）です。100 回比べる処理をサニタイザ付きの `-O0` にすると遅くなり、出力の食い違い自体は通常ビルドでも見つかります。未定義動作で落ちる反例を探すときは `CP_CXX_MODE=debug just stress 20` にします。`runcpp` の既定がデバッグでも、`just stress` は通常ビルドのままです。
 
-タスクは「ストレステスト」と「ストレステストのひな形を置く」です。
+Zed のタスクは「ストレステスト」と「ストレステストのひな形を置く」です。ストレステストは試行回数をその場で入力します。空欄なら 100 回です。
 
 ### 4. 提出する
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# clangd 拡張が、devShell の clangd を起動する。
+# Zed の clangd が、devShell の clangd を起動する。
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

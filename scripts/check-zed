@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Zed の設定が JSON として読め、タスクが nix develop 経由であることを確認する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
+  CP_PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
+
+python3 - "$CP_PROJECT_ROOT" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+settings_path = root / ".zed" / "settings.json"
+tasks_path = root / ".zed" / "tasks.json"
+clangd_path = root / ".clangd"
+
+settings = json.loads(settings_path.read_text(encoding="utf-8"))
+tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+clangd = clangd_path.read_text(encoding="utf-8")
+
+if settings.get("disable_ai") is not True:
+    sys.exit("disable_ai が true ではありません")
+
+python_servers = settings["languages"]["Python"]["language_servers"]
+if "basedpyright" not in python_servers:
+    sys.exit("Python の language server に basedpyright がありません")
+if "clangd" not in settings["languages"]["C++"]["language_servers"]:
+    sys.exit("C++ の language server に clangd がありません")
+
+extra = settings["lsp"]["basedpyright"]["settings"]["basedpyright.analysis.extraPaths"]
+if "library/python" not in extra:
+    sys.exit("basedpyright の extraPaths に library/python がありません")
+if settings["lsp"]["basedpyright"]["settings"]["python"]["pythonPath"] != ".venv/bin/python":
+    sys.exit("Python のインタプリタが .venv/bin/python ではありません")
+
+arguments = settings["lsp"]["clangd"]["binary"]["arguments"]
+if "--query-driver=**/g++" not in arguments:
+    sys.exit("clangd の query-driver がありません")
+if "-DLOCAL" not in clangd or "-std=gnu++20" not in clangd:
+    sys.exit(".clangd に -DLOCAL または -std=gnu++20 がありません")
+
+required = [
+    "C++: 開いているファイルを実行",
+    "C++: 開いているファイルを通常ビルドで実行",
+    "Python: 開いているファイルを実行",
+    "C++: このフォルダの a.cpp を実行",
+    "Python: このフォルダの a.py を実行",
+    "oj: サンプルテスト (C++)",
+    "oj: サンプルテスト (C++ 通常ビルド)",
+    "oj: サンプルテスト (Python)",
+    "コンテストを準備",
+    "C++: 提出用コードをコピー",
+    "C++: 提出用ファイルを作る",
+    "ストレステスト",
+    "ストレステストのひな形を置く",
+    "環境ファイルを更新",
+    "チェック",
+]
+labels = [task["label"] for task in tasks]
+missing = [label for label in required if label not in labels]
+if missing:
+    sys.exit("タスクがありません: " + ", ".join(missing))
+
+known = {
+    "ZED_COLUMN",
+    "ZED_ROW",
+    "ZED_FILE",
+    "ZED_FILENAME",
+    "ZED_DIRNAME",
+    "ZED_RELATIVE_FILE",
+    "ZED_RELATIVE_DIR",
+    "ZED_STEM",
+    "ZED_SYMBOL",
+    "ZED_SELECTED_TEXT",
+    "ZED_LANGUAGE",
+    "ZED_WORKTREE_ROOT",
+    "ZED_MAIN_GIT_WORKTREE",
+}
+variable = re.compile(r"\$\{?(ZED_[A-Z0-9_]+)")
+for task in tasks:
+    pieces = [task.get("command", ""), task.get("cwd", "")]
+    pieces.extend(task.get("args") or [])
+    text = "\n".join(pieces)
+    if "nix develop" not in text and not (
+        task.get("command") == "nix" and "develop" in (task.get("args") or [])
+    ):
+        sys.exit(f"nix develop を経由していません: {task['label']}")
+    unknown = sorted({name for name in variable.findall(text) if name not in known})
+    if unknown:
+        sys.exit(f"未知の Zed 変数です ({task['label']}): {', '.join(unknown)}")
+    if ".vscode" in text or "${file" in text or "${workspaceFolder" in text:
+        sys.exit(f"VS Code の変数が残っています: {task['label']}")
+
+print(f"zed tasks: {len(tasks)}")
+PY
