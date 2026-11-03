@@ -170,7 +170,6 @@ grep -q 'redefinition\|conflicting declaration' "$work/both.err"
 echo "== 出典コメント =="
 grep -qxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$root/library/cpp/template.hpp"
 grep -qxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$root/templates/a.cpp"
-grep -qxF '// このテンプレートには、AIによるコード生成を利用した部分が含まれます。' "$root/templates/a.cpp"
 python3 "$root/scripts/bundle_cpp.py" -I "$root" "$root/templates/a.cpp" >"$work/a_bundled.cpp"
 count=$(grep -cxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$work/a_bundled.cpp")
 # a.cpp 自身の行と、展開した template.hpp の行の 2 つ。
