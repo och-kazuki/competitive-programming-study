@@ -2,6 +2,8 @@
 
 単調な述語の、true と false の境界を探す。
 
+このノートのコードは、すべてめぐる式で書く。
+
 述語 `f` は、ある境目より手前はすべて同じ真偽で、境目を越えると一度だけ反転する。配列がソート済みなら「`x` 以上か」、答えの候補なら「この値で条件を満たすか」が、その述語になる。
 
 ## 不変条件で縮める
@@ -28,6 +30,19 @@ ll boundary(ll ok, ll ng, F f) {
 ```
 
 `mid` は `ok` と `ng` のあいだに入る。`f(mid)` が true なら `ok` を、false なら `ng` を `mid` に寄せる。どちらに寄せても、上の2つの不変条件は壊れない。
+
+Python も同じ不変条件である。整数は多倍長なので、和は溢れない。
+
+```python
+def boundary(ok: int, ng: int, f) -> int:
+    while abs(ok - ng) > 1:
+        mid = (ok + ng) // 2
+        if f(mid):
+            ok = mid
+        else:
+            ng = mid
+    return ok
+```
 
 `x >= 3` を、整数 `0` から `6` で最小化する例である。初期値は範囲の外に置く（次の節）。
 
@@ -101,6 +116,16 @@ ll maximize(ll L, ll R, auto f) { return boundary(L - 1, R + 1, f); }
 | `x` 以上の最初 | `lower_bound` | `bisect_left` |
 | `x` より大きい最初 | `upper_bound` | `bisect_right` |
 
+`lower_bound` が返す添字は、めぐる式で `ng = -1`、`ok = N`、`f(i) = a[i] >= x` としたときの `ok` と同じである。`N` は配列の長さである。`-1` と `N` では `f` を呼ばない。`upper_bound` は、同じ初期値で `f(i) = a[i] > x` である。
+
+```cpp
+ll first_ge(const vi &a, ll x) {
+  return boundary(len(a), -1, [&](ll i) { return a[i] >= x; });
+}
+```
+
+`len(a)` は要素数を `ll` で返す。
+
 `a = {1, 2, 2, 4}` のとき、位置は次のとおり。
 
 | x | lower_bound | upper_bound | `x` の個数 |
@@ -140,15 +165,24 @@ Python の `bisect_left` が C++ の `lower_bound`、`bisect_right` が `upper_b
 - 最小値の最大化、最大値の最小化は、その値を `mid` にして判定する。満たすなら `ok`、満たさないなら `ng` へ寄せる。
 - 判定が `O(N)` や `O(N log N)` でも、外側は `O(log (値域))` 回しか呼ばない。
 
-整数の最大化なら初期値は `ok = L - 1`、`ng = R + 1` である。
+整数の最大化は、`ok = L - 1`、`ng = R + 1` を `boundary` に渡す。
 
 ```cpp
 template <class F>
-ll max_ok(ll L, ll R, F f) {
-  ll ok = L - 1;
-  ll ng = R + 1;
-  while (std::llabs(ok - ng) > 1) {
-    ll mid = ng + (ok - ng) / 2;
+ll max_ok(ll L, ll R, F f) { return boundary(L - 1, R + 1, f); }
+```
+
+## 実数
+
+整数と違い、隣り合う実数は無い。`|ok - ng| > 1` では終わらないので、回数を 100 に固定する。`double` なら 100 回で、実用上の精度は足りる。
+
+最小化も最大化も同じ関数である。入れ替えるのは、初期値の `ok` と `ng` の向きだけである。
+
+```cpp
+template <class F>
+double boundary_real(double ok, double ng, F f) {
+  for (int iter = 0; iter < 100; iter++) {
+    double mid = (ok + ng) / 2;
     if (f(mid)) ok = mid;
     else ng = mid;
   }
@@ -156,25 +190,16 @@ ll max_ok(ll L, ll R, F f) {
 }
 ```
 
-## 実数
-
-整数と違い、隣り合う実数は無い。`|ok - ng| > 1` では終わらないので、回数を固定する。`double` なら 100 回で、実用上の精度は足りる。
-
-最小化するとき（一度 true になったら以降も true）は、true なら `hi` を下げる。
+一度 true になったら以降も true（最小の true）なら、`ok` を大きい側、`ng` を小さい側に置く。一度 false になったら以降も false（最大の true）なら、`ok` を小さい側、`ng` を大きい側に置く。`f` は初期の `ok` と `ng` では呼ばない。
 
 ```cpp
 template <class F>
-double min_real(double lo, double hi, F f) {
-  for (int iter = 0; iter < 100; iter++) {
-    double mid = (lo + hi) / 2;
-    if (f(mid)) hi = mid;
-    else lo = mid;
-  }
-  return hi;
-}
+double minimize_real(double L, double R, F f) { return boundary_real(R, L, f); }
+template <class F>
+double maximize_real(double L, double R, F f) { return boundary_real(L, R, f); }
 ```
 
-最大化なら、true のときに `lo` を上げて、最後は `lo` を返す。終了条件を `hi - lo > 1e-12` のような差にすると、`double` で差が縮まなくなり、ループが終わらないことがある。
+終了条件を `|ok - ng|` の差にすると、`double` で差が縮まなくなり、ループが終わらないことがある。
 
 ## 計算量
 
@@ -190,9 +215,9 @@ double min_real(double lo, double hi, F f) {
 
 ## 注意点
 
-- ループが終わらない。`ok` と `ng` の更新を逆にすると、`mid` が動かなくなる。実数で差を終了条件にすると、表現できない差で止まる。
-- `(ok + ng) / 2` は、和が `LLONG_MAX`（およそ `9.2 * 10^18`）を超えるときに溢れる。両方がおよそ `4.6 * 10^18` を超えるときがそれにあたる。`ng + (ok - ng) / 2` を使う。ただし `ok - ng` 自体が溢れるほど範囲が広いとき（負から正へ `9.2 * 10^18` を超えてまたぐとき）は使えない。その場合は範囲を狭めるか、`__int128` で中点を計算する。
-- C++ の整数除算は 0 へ向かう。負の範囲で `(ok + ng) / 2` を、`while (left < right)` と組み合わせると、`mid` が端のままになり終わらないことがある。めぐる式は `|ok - ng| > 1` で隣り合った時点で止まるので、この組み合わせより安全である。Python の `//` は負の無限大へ向かうので、同じ式でも切れ方が違う。
+- ループが終わらない。`ok` と `ng` の更新を逆にすると、`mid` が動かなくなる。実数で `|ok - ng|` を終了条件にすると、表現できない差で止まる。
+- 整数の `(ok + ng) / 2` は、和が `LLONG_MAX`（およそ `9.2 * 10^18`）を超えるときに溢れる。両方がおよそ `4.6 * 10^18` を超えるときがそれにあたる。`ng + (ok - ng) / 2` を使う。ただし `ok - ng` 自体が溢れるほど範囲が広いとき（負から正へ `9.2 * 10^18` を超えてまたぐとき）は使えない。その場合は範囲を狭めるか、`__int128` で中点を計算する。
+- C++ の整数除算は 0 へ向かう。`|ok - ng| > 1` のとき、`ng + (ok - ng) / 2` は `ok` でも `ng` でもない。Python の `//` は負の無限大へ向かうので、`(ok + ng) // 2` は C++ と切れ方が違うことがある。
 - 単調でない述語に掛けると、不変条件が途中で壊れる。境界の前後で true と false が一度だけ入れ替わることを先に確認する。
 - 終了時に返すのは、満たす側の `ok` である。`ng` を返すと 1 だけずれる。範囲は閉区間 `[L, R]` か半開区間 `[L, R)` かを、初期値と一緒に固定する。
 - 判定が重いと、`log W` 回でも間に合わない。判定の計算量を先に見積もる。
@@ -200,11 +225,11 @@ double min_real(double lo, double hi, F f) {
 ## 見返し
 
 - 述語は、境界の前後で一度だけ反転するか。
-- 最大化なら `ok = L - 1`、`ng = R + 1`。最小化ならその逆か。
-- ループ条件は `|ok - ng| > 1` か。実数なら回数を固定したか。
-- `mid` は `ng + (ok - ng) / 2` か。
-- 返しているのは `ok` か。解が無いときの値は初期位置のまま残るか。
-- 配列なら `lower_bound` と `upper_bound` を取り違えていないか。個数は差で取れているか。
+- 最大化なら `ok = L - 1`、`ng = R + 1`。最小化ならその逆か。実数も、満たす側を `ok`、満たさない側を `ng` に置いたか。
+- 整数のループは `|ok - ng| > 1` か。実数は 100 回か。
+- 整数の `mid` は `ng + (ok - ng) / 2` か。実数は `(ok + ng) / 2` か。Python は `(ok + ng) // 2` か。
+- 返しているのは `ok` か。解が無いとき、整数の `ok` は初期位置のまま残るか。
+- 配列の `lower_bound` は `ng = -1`、`ok = N`、`f(i) = a[i] >= x` と一致するか。`upper_bound` は `a[i] > x` か。個数は差で取れているか。
 
 ## 関連
 
