@@ -61,8 +61,10 @@ if "using vi = vector<ll>;" not in text:
     sys.exit("テンプレートヘッダが展開されていません")
 if "int main()" not in text:
     sys.exit("main がありません")
-if "// Repository: https://github.com/och-kazuki/competitive-programming-study" not in text:
-    sys.exit("出典コメント（Repository）が残っていません")
+needle = "// Repository: https://github.com/och-kazuki/competitive-programming-study"
+count = sum(1 for line in text.splitlines() if line == needle)
+if count != 1:
+    sys.exit(f"出典コメント（Repository）が{count}回です")
 PY
 # 展開後はリポジトリをインクルードパスに入れなくてもコンパイルできる。
 g++ -std=gnu++20 -O2 -Wall -Wextra -o "$tmpdir/bundled" "$bundled"
