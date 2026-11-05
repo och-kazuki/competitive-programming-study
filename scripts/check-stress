@@ -88,6 +88,20 @@ PATH="$work/bin:$PATH" CP_GXX_LOG="$work/gxx.log" CP_REAL_GXX="$real_gxx" \
 grep -q 'fsanitize' "$work/gxx.log"
 grep -q 'DLOCAL' "$work/gxx.log"
 
+echo "== 本解が a.cpp でなければ止まる =="
+missing="$work/no-solution"
+mkdir -p "$missing"
+cp "$root/tests/stress/ok/gen.py" "$root/tests/stress/ok/naive.cpp" "$missing/"
+printf 'print(1)\n' >"$missing/a.py"
+set +e
+CP_STRESS_COUNT=1 bash "$root/scripts/stress" "$missing" >"$work/no-solution.out" 2>"$work/no-solution.err"
+status=$?
+set -e
+[[ "$status" -eq 2 ]]
+grep -q "本解の a.cpp がありません: $missing" "$work/no-solution.err"
+[[ ! -e "$missing/stress" ]]
+[[ ! -e "$missing/test" ]]
+
 echo "== ひな形は無いときだけ置く =="
 init_dir="$work/init"
 mkdir -p "$init_dir"
