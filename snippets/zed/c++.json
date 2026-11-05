@@ -21,6 +21,15 @@
     ],
     "description": "8 近傍の dx, dy（右から時計回り。x は列、y は行）。grid4 とは同時に使わない"
   },
+  "lambda": {
+    "prefix": "lambda",
+    "body": [
+      "auto ${1:f} = [&](${2:auto x}) {",
+      "  $0",
+      "};"
+    ],
+    "description": "型推論のラムダ。最初のカーソルは名前。次のタブで引数、最後に本体へ移る"
+  },
   "outgrid": {
     "prefix": "outgrid",
     "body": [

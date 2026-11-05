@@ -90,7 +90,7 @@
               echo "competitive-programming-study"
               echo "  root:   $project_root"
               echo "  C++:    g++ / clangd / AtCoder Library"
-              echo "  Python: python / uv / pyright / ruff / oj"
+              echo "  Python: python / uv / basedpyright / ruff / oj"
               echo "  移動:   abc 400 / abc 400 e / contest arc190"
               echo "  実行:   run / just --list"
             '';
