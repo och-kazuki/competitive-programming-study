@@ -55,6 +55,33 @@ fi
 problem="$(printf '%s' "$problem" | tr '[:upper:]' '[:lower:]')"
 printf -v contest_id '%s%03d' "$kind" "$((10#$number))"
 
+declare -a folders=()
+declare -a urls=()
+fetched=0
+
+print_contest_urls() {
+  if [[ -z "${contest_id:-}" ]]; then
+    return 0
+  fi
+  echo "https://atcoder.jp/contests/${contest_id}" >&2
+  if [[ -z "${problem:-}" ]]; then
+    return 0
+  fi
+  local task_url="" i
+  if [[ "$fetched" -eq 1 ]]; then
+    for i in "${!folders[@]}"; do
+      if [[ "${folders[$i]}" == "$problem" ]]; then
+        task_url="${urls[$i]}"
+        break
+      fi
+    done
+  fi
+  if [[ -z "$task_url" ]]; then
+    task_url="https://atcoder.jp/contests/${contest_id}/tasks/${contest_id}_${problem}"
+  fi
+  echo "$task_url" >&2
+}
+
 retries="${CP_CONTEST_RETRIES:-5}"
 retry_wait="${CP_CONTEST_RETRY_WAIT:-3}"
 download_wait="${CP_CONTEST_SLEEP:-2}"
@@ -127,10 +154,9 @@ install_templates() {
 }
 
 list_file="$(mktemp)"
-trap 'rm -f "$list_file"' EXIT
+trap 'print_contest_urls; rm -f "$list_file"' EXIT
 
 attempt=1
-fetched=0
 while true; do
   if fetch_tasks >"$list_file"; then
     fetched=1
@@ -145,8 +171,6 @@ while true; do
   attempt=$((attempt + 1))
 done
 
-declare -a folders=()
-declare -a urls=()
 if [[ "$fetched" -eq 1 ]]; then
   while read -r folder url; do
     [[ -n "${folder:-}" && -n "${url:-}" ]] || continue

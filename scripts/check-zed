@@ -35,6 +35,9 @@ if "clangd" not in settings["languages"]["C++"]["language_servers"]:
 
 if settings["lsp"]["basedpyright"]["settings"]["python"]["pythonPath"] != ".venv/bin/python":
     sys.exit("Python のインタプリタが .venv/bin/python ではありません")
+analysis = settings["lsp"]["basedpyright"]["settings"]
+if analysis.get("basedpyright.analysis.typeCheckingMode") != "standard":
+    sys.exit("basedpyright の typeCheckingMode が standard ではありません")
 
 arguments = settings["lsp"]["clangd"]["binary"]["arguments"]
 if "--query-driver=**/g++" not in arguments:

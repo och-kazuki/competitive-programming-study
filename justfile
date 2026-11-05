@@ -60,7 +60,7 @@ submit-file dir=".":
 copy target=".":
     "{{root}}/scripts/copy-submit" "{{target}}"
 
-# テンプレート、ライブラリ、ruff、oj、pyright を確認する
+# テンプレート、ライブラリ、ruff、oj、basedpyright を確認する
 check:
     "{{root}}/scripts/check"
     "{{root}}/scripts/oj-smoke"
@@ -69,4 +69,4 @@ check:
     "{{root}}/scripts/check-copy"
     "{{root}}/scripts/check-contest"
     "{{root}}/scripts/check-outside"
-    pyright
+    basedpyright

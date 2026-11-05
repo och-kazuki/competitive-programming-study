@@ -26,7 +26,7 @@ from pathlib import Path
 
 path, out = Path(sys.argv[1]), Path(sys.argv[2])
 data = json.loads(path.read_text(encoding="utf-8"))
-expected = {"grid4", "grid8", "outgrid"}
+expected = {"grid4", "grid8", "outgrid", "lambda"}
 assert set(data) == expected, f"スニペット名が想定と違います: {sorted(data)}"
 
 token = re.compile(r"\\\$|\$\{(\d+):([^}]*)\}|\$\{(\d+)\}|\$(\d+)|\$")
@@ -49,6 +49,13 @@ def expand(line: str) -> tuple[str, set[int]]:
 
 for name, snip in data.items():
     assert snip.get("prefix") == name, f"{name}: prefix は名前と同じにします"
+    if name == "lambda":
+        raw = "\n".join(snip["body"])
+        name_at = raw.index("${1:f}")
+        arg_at = raw.index("${2:auto x}")
+        body_at = raw.index("$0")
+        assert name_at < arg_at < body_at, raw
+        assert "auto ${1:f} = [&](${2:auto x}) {" in raw
     assert isinstance(snip.get("description"), str) and snip["description"], name
     body = snip.get("body")
     assert isinstance(body, list) and all(isinstance(x, str) for x in body), name
@@ -167,6 +174,21 @@ if bash "$cxx" -o "$work/both" "$work/both.cpp" 2>"$work/both.err"; then
   exit 1
 fi
 grep -q 'redefinition\|conflicting declaration' "$work/both.err"
+
+echo "== lambda をコンパイルする =="
+grep -qxF 'auto f = [&](auto x) {' "$work/lambda.inc"
+{
+  echo '#include "library/cpp/template.hpp"'
+  echo 'int main() {'
+  sed 's/^/  /' "$work/lambda.inc"
+  echo '  f(0);'
+  echo '  return 0;'
+  echo '}'
+} >"$work/lambda.cpp"
+# 既定の引数名は本体を書く前なので、未使用の仮引数はエラーにしない。
+bash "$cxx" -Werror -Wno-unused-parameter -o "$work/lambda" "$work/lambda.cpp"
+python3 "$root/scripts/bundle_cpp.py" -I "$root" "$work/lambda.cpp" >"$work/lambda_bundled.cpp"
+g++ -std=gnu++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter -o "$work/lambda_bundled" "$work/lambda_bundled.cpp"
 
 echo "== 出典コメント =="
 grep -qxF '// Repository: https://github.com/och-kazuki/competitive-programming-study' "$root/library/cpp/template.hpp"

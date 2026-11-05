@@ -10,7 +10,7 @@ if [[ -z "${CP_PROJECT_ROOT:-}" ]]; then
 fi
 
 work=$(mktemp -d)
-trap 'rm -rf "$work" "$CP_PROJECT_ROOT/work/abc999" "$CP_PROJECT_ROOT/work/abc998" "$CP_PROJECT_ROOT/work/abc997" "$CP_PROJECT_ROOT/work/abc996" "$CP_PROJECT_ROOT/work/abc995"' EXIT
+trap 'rm -rf "$work" "$CP_PROJECT_ROOT/work/abc999" "$CP_PROJECT_ROOT/work/abc998" "$CP_PROJECT_ROOT/work/abc997" "$CP_PROJECT_ROOT/work/abc996" "$CP_PROJECT_ROOT/work/abc995" "$CP_PROJECT_ROOT/work/arc190"' EXIT
 
 fetch="$work/fetch"
 oj="$work/oj"
@@ -88,7 +88,12 @@ echo "== 全問題を作って A へ移動する =="
   . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
   abc 999
   [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/a" ]]
-)
+) 2>"$work/abc999-first.err"
+grep -qxF 'https://atcoder.jp/contests/abc999' "$work/abc999-first.err"
+if grep -q '^https://atcoder.jp/contests/abc999/tasks/' "$work/abc999-first.err"; then
+  echo "問題記号が無いのに問題 URL が出ました" >&2
+  exit 1
+fi
 for folder in a b ex; do
   [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/a.cpp" ]]
   [[ ! -e "$CP_PROJECT_ROOT/work/abc999/$folder/a.py" ]]
@@ -104,7 +109,8 @@ before=$(wc -l <"$oj_log" | tr -d ' ')
   . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
   abc 999
   [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/a" ]]
-)
+) 2>"$work/abc999-again.err"
+grep -qxF 'https://atcoder.jp/contests/abc999' "$work/abc999-again.err"
 [[ "$(cat "$CP_PROJECT_ROOT/work/abc999/a/a.cpp")" == "CUSTOM" ]]
 [[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq "$before" ]]
 
@@ -114,7 +120,9 @@ echo "== 問題記号だけなら移動し、無ければその問題だけ用�
   . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
   abc 999 ex
   [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/abc999/ex" ]]
-)
+) 2>"$work/abc999-ex.err"
+grep -qxF 'https://atcoder.jp/contests/abc999' "$work/abc999-ex.err"
+grep -qxF 'https://atcoder.jp/contests/abc999/tasks/abc999_h' "$work/abc999-ex.err"
 [[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq "$before" ]]
 rm -rf "$CP_PROJECT_ROOT/work/abc999/b"
 (
@@ -125,6 +133,22 @@ rm -rf "$CP_PROJECT_ROOT/work/abc999/b"
 )
 [[ -f "$CP_PROJECT_ROOT/work/abc999/b/a.cpp" ]]
 [[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq $((before + 1)) ]]
+
+echo "== contest でも URL を出す =="
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  contest arc190
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/arc190/a" ]]
+) 2>"$work/arc190-first.err"
+grep -qxF 'https://atcoder.jp/contests/arc190' "$work/arc190-first.err"
+(
+  # shellcheck disable=SC1091
+  . "$CP_PROJECT_ROOT/scripts/shell-functions.sh"
+  contest arc190
+  [[ "$(pwd)" == "$CP_PROJECT_ROOT/work/arc190/a" ]]
+) 2>"$work/arc190-again.err"
+grep -qxF 'https://atcoder.jp/contests/arc190' "$work/arc190-again.err"
 
 echo "== 問題一覧が取れない =="
 export CP_CONTEST_FETCH_CMD="$fail_fetch"
@@ -222,6 +246,7 @@ status=0
 msg=$(PATH="$editor_path" "$CP_PROJECT_ROOT/scripts/prepare-and-open" "995" 2>&1) || status=$?
 [[ "$status" -eq 0 ]]
 printf '%s\n' "$msg" | grep -F "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" >/dev/null
+printf '%s\n' "$msg" | grep -qxF 'https://atcoder.jp/contests/abc995'
 [[ -f "$CP_PROJECT_ROOT/work/abc995/a/a.cpp" ]]
 [[ "$(cat "$CP_PROJECT_ROOT/work/abc995/a/test/sample-1.in")" == "2 3" ]]
 if [[ -s "$CP_NET_DENY_LOG" ]]; then

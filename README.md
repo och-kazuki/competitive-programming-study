@@ -24,6 +24,7 @@ abc 400 b
 - `just oj` は、今いるディレクトリの `test/` で `a.cpp` を試します。
 - `just copy` は展開した提出コードをクリップボードへコピーします。ファイルに残すときは `just submit-file` です。
 - `abc 400 b` は B 問題へ移動します。既にサンプルがある問題は取り直さないので、すぐ終わります。
+- 終わるとコンテストの URL を出します。例: `https://atcoder.jp/contests/abc400`。問題記号を付けたとき（`abc 400 e` や `contest arc190 a`）は、問題ページの URL も出します。取得済みでサンプルを取り直さないときも出します。
 - 既存の `a.cpp` は上書きしません。
 - ARC や AGC は `contest arc190`、`arc 190`、`agc 001 c` のようにします。
 - ネットにつながらないときや開始前は、その旨を出して、作れたフォルダだけ残します。
@@ -62,7 +63,7 @@ nix develop
 シェルでは次が使えます。
 
 - C++: `g++`、`clangd`、`clang-format`、AtCoder Library
-- Python: `python`、`uv`、`pyright`、`ruff`、`oj`
+- Python: `python`、`uv`、`basedpyright`、`ruff`、`oj`
 - 操作: `run`、`just`、`abc`
 
 `just` の一覧は `just --list` で見られます。
@@ -87,7 +88,7 @@ Zed は WSL 側のフォルダを開きます。WSL のターミナルでリポ�
 
 C++ の補完は clangd です。`.clangd` は `-std=gnu++20` と `-DLOCAL` を足します。インクルードパスは、開発シェルに入ったときと `just sync`、タスク「環境ファイルを更新」が作る `compile_flags.txt` に入ります。サニタイザと `_GLIBCXX_DEBUG` は `run` のデバッグビルド用で、clangd のフラグには入れていません。clangd の実行ファイルを Nix のものに固定するときは、`lsp.clangd.binary.path` に `scripts/editor-clangd` の絶対パスを書きます。Zed はこの項目に絶対パスを要求します。このスクリプトは `nix develop --command clangd` を起動します。
 
-Python の解析は basedpyright、整形は Ruff です。インタプリタは `.venv/bin/python` です。`pyproject.toml` の `[tool.basedpyright]` に書いてあります。生成器の `gen.py` と、`scripts/` の Python もこの設定で見ます。`.venv` は最初の `nix develop` で作られます。
+Python の解析は basedpyright、整形は Ruff です。型チェックは standard です。インタプリタは `.venv/bin/python` です。設定は `pyproject.toml` の `[tool.basedpyright]` と `.zed/settings.json` にあります。生成器の `gen.py` と、`scripts/` の Python もこの設定で見ます。`.venv` は最初の `nix develop` で作られます。
 
 キーバインドの例です。ユーザーの `keymap.json` に足すと、`ctrl-alt-c` でコピーのタスクを実行できます。
 
@@ -109,6 +110,7 @@ Python の解析は basedpyright、整形は Ruff です。インタプリタは
 | `grid4` | 4 近傍の `dx[4]` / `dy[4]`。順序は R, L, D, U（右, 左, 下, 上） | `main` の外（include の後）か `main` の中 |
 | `grid8` | 8 近傍の `dx[8]` / `dy[8]`。順序は R, DR, D, DL, L, UL, U, UR（右から時計回り） | `main` の外（include の後）か `main` の中 |
 | `outgrid` | `inline bool out_grid(int y, int x, int h, int w)`。グリッドの外なら `true` | 関数定義なので必ず `main` の外（include の後） |
+| `lambda` | `auto f = [&](auto x) { ... };`。型推論のラムダ | 式を置ける場所。最初のカーソルは名前、次が引数、最後が本体 |
 
 - `x` は列（`+1` で右）、`y` は行（`+1` で下）です。`out_grid` の引数は行 `y`、列 `x`、行数 `h`、列数 `w` の順です。
 - `grid4` と `grid8` は同じ名前 `dx` / `dy` を定義するので、1 つのファイルではどちらか片方だけを使います。
@@ -118,7 +120,7 @@ Zed はリポジトリ内のスニペットファイルを自動では読みま�
 
 1. Zed のコマンドパレットで `snippets: configure snippets` を実行し、言語に C++ を選びます。C++ 用のスニペットファイル（`c++.json`）が開きます。Linux と macOS では `~/.config/zed/snippets/` の下です。フォルダは `snippets: open folder` でも開けます。
 2. ファイルが空なら、`snippets/zed/c++.json` の中身をそのまま貼ります。
-3. すでに自分のスニペットがあるときは、外側の `{ }` の中に `grid4`、`grid8`、`outgrid` の 3 項目だけを足します。既存の項目は消しません。同じ名前の項目があるときは、どちらを残すか決めてから片方の名前を変えます。
+3. すでに自分のスニペットがあるときは、外側の `{ }` の中に `grid4`、`grid8`、`outgrid`、`lambda` の 4 項目だけを足します。既存の項目は消しません。同じ名前の項目があるときは、どちらを残すか決めてから片方の名前を変えます。
 4. 保存します。
 
 WSL2 で Windows 版の Zed を使うときは、スニペットファイルは WSL 側ではなく Zed 本体の設定フォルダにあるはずです。その場所は公式ドキュメントで確認できていないため、パスを手で探さずに `snippets: configure snippets` か `snippets: open folder` で開いてください。
@@ -247,7 +249,7 @@ just copy
 just check
 ```
 
-テンプレートのコンパイル、C++ のライブラリテスト、ストレステスト、Zed の設定とスニペットの検査、`ruff`、`pyright`、ローカルサンプルに対する `oj` を実行します。
+テンプレートのコンパイル、C++ のライブラリテスト、ストレステスト、Zed の設定とスニペットの検査、`ruff`、`basedpyright`、ローカルサンプルに対する `oj` を実行します。
 
 GitHub Actions では `nix flake check` のあと、同じ devShell で `just check` を実行します。
 

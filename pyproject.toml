@@ -10,6 +10,7 @@ dev = [
     "online-judge-tools>=11.5.1",
     # oj 11.5.1 は Python 3.12 で削除された distutils を import する。
     "setuptools>=84.2.1",
+    "basedpyright>=1.40.2",
 ]
 
 [tool.uv]
@@ -19,16 +20,9 @@ package = false
 line-length = 100
 target-version = "py312"
 
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.12"
-typeCheckingMode = "basic"
-include = ["templates", "tests", "scripts/bundle_cpp.py", "scripts/fetch-atcoder-tasks.py"]
-
 [tool.basedpyright]
 venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
-typeCheckingMode = "basic"
+typeCheckingMode = "standard"
 include = ["templates", "tests", "scripts/bundle_cpp.py", "scripts/fetch-atcoder-tasks.py"]
