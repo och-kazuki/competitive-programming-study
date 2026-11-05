@@ -14,35 +14,25 @@ sync:
 new contest problem:
     "{{root}}/scripts/new-problem" "{{contest}}" "{{problem}}"
 
-# C++ をコンパイルして実行する。パスは just を実行したディレクトリ基準。
+# a.cpp をコンパイルして実行する。パスは just を実行したディレクトリ基準。
 [no-cd]
-runcpp *args:
-    "{{root}}/scripts/runcpp" {{args}}
-
-# Python を実行する。パスは just を実行したディレクトリ基準。
-[no-cd]
-runpy *args:
-    "{{root}}/scripts/runpy" {{args}}
+run *args:
+    "{{root}}/scripts/run" {{args}}
 
 # ディレクトリ内の a.cpp を oj でサンプルテストする。既定はデバッグビルド。
 [no-cd]
-oj-cpp dir=".":
-    "{{root}}/scripts/oj-test" cpp "{{dir}}"
+oj dir=".":
+    "{{root}}/scripts/oj-test" "{{dir}}"
 
 # 速度確認用。サニタイザなしの通常ビルドでサンプルテストする。
 [no-cd]
-oj-cpp-release dir=".":
-    CP_CXX_MODE=release "{{root}}/scripts/oj-test" cpp "{{dir}}"
+oj-release dir=".":
+    CP_CXX_MODE=release "{{root}}/scripts/oj-test" "{{dir}}"
 
-# 通常ビルドで C++ を実行する。
+# 通常ビルドで a.cpp を実行する。
 [no-cd]
-runcpp-release *args:
-    CP_CXX_MODE=release "{{root}}/scripts/runcpp" {{args}}
-
-# ディレクトリ内の a.py を oj でサンプルテストする。
-[no-cd]
-oj-py dir=".":
-    "{{root}}/scripts/oj-test" py "{{dir}}"
+run-release *args:
+    CP_CXX_MODE=release "{{root}}/scripts/run" {{args}}
 
 # gen と naive を、無いときだけ今のディレクトリへ置く。
 [no-cd]

@@ -12,9 +12,9 @@ fi
 err="$(mktemp)"
 trap 'rm -f "$err"' EXIT
 
-echo "== devShell の外では runcpp が止まる =="
+echo "== devShell の外では run が止まる =="
 set +e
-env -u CP_IN_DEV_SHELL "$CP_PROJECT_ROOT/scripts/runcpp" >/dev/null 2>"$err"
+env -u CP_IN_DEV_SHELL "$CP_PROJECT_ROOT/scripts/run" >/dev/null 2>"$err"
 status=$?
 set -e
 [[ "$status" -ne 0 ]]
@@ -22,7 +22,7 @@ grep -q "先に nix develop を実行してください。" "$err"
 
 echo "== devShell の外では just も止まる =="
 set +e
-env -u CP_IN_DEV_SHELL just --justfile "$CP_PROJECT_ROOT/justfile" runcpp >/dev/null 2>"$err"
+env -u CP_IN_DEV_SHELL just --justfile "$CP_PROJECT_ROOT/justfile" run >/dev/null 2>"$err"
 status=$?
 set -e
 [[ "$status" -ne 0 ]]

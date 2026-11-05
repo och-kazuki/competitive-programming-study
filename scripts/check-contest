@@ -91,7 +91,7 @@ echo "== 全問題を作って A へ移動する =="
 )
 for folder in a b ex; do
   [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/a.cpp" ]]
-  [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/a.py" ]]
+  [[ ! -e "$CP_PROJECT_ROOT/work/abc999/$folder/a.py" ]]
   [[ -f "$CP_PROJECT_ROOT/work/abc999/$folder/test/sample-1.in" ]]
 done
 [[ "$(wc -l <"$oj_log" | tr -d ' ')" -eq 3 ]]

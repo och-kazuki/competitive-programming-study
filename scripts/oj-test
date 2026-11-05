@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
-# 問題ディレクトリの test/ を oj で実行する。
+# 問題ディレクトリの test/ で a.cpp を oj で実行する。
 set -euo pipefail
 
 # shellcheck disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
 
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo "使い方: oj-test cpp|py [ディレクトリ]" >&2
+if [[ $# -gt 1 ]]; then
+  echo "使い方: oj-test [ディレクトリ]" >&2
   exit 1
 fi
 
-lang="$1"
-dir="${2:-.}"
-if [[ "$lang" != "cpp" && "$lang" != "py" ]]; then
-  echo "言語は cpp か py です: $lang" >&2
-  exit 1
-fi
+dir="${1:-.}"
 
 root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 dir=$(cd "$dir" && pwd)
@@ -30,28 +25,13 @@ if ! command -v oj >/dev/null 2>&1; then
   exit 1
 fi
 
-case "$lang" in
-cpp)
-  if [[ ! -f "$dir/a.cpp" ]]; then
-    echo "a.cpp がありません: $dir" >&2
-    exit 1
-  fi
-  tmp=$(mktemp)
-  trap 'rm -f "$tmp"' EXIT
-  mode="${CP_CXX_MODE:-debug}"
-  echo "ビルド: $mode" >&2
-  CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$tmp" "$dir/a.cpp"
-  oj t -c "$tmp" -d "$dir/test"
-  ;;
-py)
-  if [[ ! -f "$dir/a.py" ]]; then
-    echo "a.py がありません: $dir" >&2
-    exit 1
-  fi
-  python3="$root/.venv/bin/python"
-  if [[ ! -x "$python3" ]]; then
-    python3=$(command -v python3)
-  fi
-  oj t -c "$python3 $dir/a.py" -d "$dir/test"
-  ;;
-esac
+if [[ ! -f "$dir/a.cpp" ]]; then
+  echo "a.cpp がありません: $dir" >&2
+  exit 1
+fi
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+mode="${CP_CXX_MODE:-debug}"
+echo "ビルド: $mode" >&2
+CP_CXX_MODE="$mode" bash "$root/scripts/cp-gxx" -o "$tmp" "$dir/a.cpp"
+oj t -c "$tmp" -d "$dir/test"

@@ -38,15 +38,6 @@ else
   done
 fi
 
-echo "== Python ライブラリテスト =="
-export PYTHONPATH="$CP_PROJECT_ROOT/library/python${PYTHONPATH:+:$PYTHONPATH}"
-pytests=("$CP_PROJECT_ROOT"/tests/python/test_*.py)
-if [[ ${#pytests[@]} -eq 0 ]]; then
-  echo "テストファイルはありません"
-else
-  python3 -m unittest discover -s "$CP_PROJECT_ROOT/tests/python" -v
-fi
-
 echo "== C++ 展開 =="
 bundled="$tmpdir/bundled.cpp"
 python3 "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" -I "$CP_PROJECT_ROOT" \
@@ -86,13 +77,11 @@ echo "== ruff =="
 export RUFF_CACHE_DIR="$tmpdir/ruff-cache"
 ruff check \
   "$CP_PROJECT_ROOT/templates" \
-  "$CP_PROJECT_ROOT/library/python" \
   "$CP_PROJECT_ROOT/tests" \
   "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" \
   "$CP_PROJECT_ROOT/scripts/fetch-atcoder-tasks.py"
 ruff format --check \
   "$CP_PROJECT_ROOT/templates" \
-  "$CP_PROJECT_ROOT/library/python" \
   "$CP_PROJECT_ROOT/tests" \
   "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" \
   "$CP_PROJECT_ROOT/scripts/fetch-atcoder-tasks.py"

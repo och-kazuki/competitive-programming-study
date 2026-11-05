@@ -13,5 +13,4 @@ oj_cache=$("$CP_PROJECT_ROOT/scripts/seed-oj-cache")
 trap 'rm -rf "$oj_cache"' EXIT
 export XDG_CACHE_HOME="$oj_cache"
 
-"$CP_PROJECT_ROOT/scripts/oj-test" cpp "$CP_PROJECT_ROOT/tests/oj"
-"$CP_PROJECT_ROOT/scripts/oj-test" py "$CP_PROJECT_ROOT/tests/oj"
+"$CP_PROJECT_ROOT/scripts/oj-test" "$CP_PROJECT_ROOT/tests/oj"
