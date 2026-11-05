@@ -34,9 +34,7 @@ fi
 
 mkdir -p "$dest/test"
 cp "$root/templates/a.cpp" "$dest/a.cpp"
-cp "$root/templates/a.py" "$dest/a.py"
 
 echo "作りました: $dest"
 echo "  解答:     $dest/a.cpp"
-echo "            $dest/a.py"
 echo "  サンプル: $dest/test/"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # g++ を、テンプレートとライブラリと AtCoder Library が見えるフラグで起動する。
 # CP_CXX_MODE=debug で、LOCAL とサニタイザと libstdc++ のデバッグモードを付ける。
-# 未指定のときは release（提出に近い -O2）。runcpp と oj-test 側が debug を既定にする。
+# 未指定のときは release（提出に近い -O2）。run と oj-test 側が debug を既定にする。
 set -euo pipefail
 
 # shellcheck disable=SC1091

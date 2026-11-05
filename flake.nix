@@ -81,7 +81,6 @@
               export UV_PROJECT_ENVIRONMENT="$project_root/.venv"
               export UV_PYTHON_DOWNLOADS=never
               export UV_PYTHON="${pkgs.python312}/bin/python"
-              export PYTHONPATH="$project_root/library/python''${PYTHONPATH:+:$PYTHONPATH}"
 
               uv sync --frozen --project "$project_root"
               export PATH="$UV_PROJECT_ENVIRONMENT/bin:$project_root/scripts:$PATH"
@@ -93,7 +92,7 @@
               echo "  C++:    g++ / clangd / AtCoder Library"
               echo "  Python: python / uv / pyright / ruff / oj"
               echo "  移動:   abc 400 / abc 400 e / contest arc190"
-              echo "  実行:   runcpp / runpy / just --list"
+              echo "  実行:   run / just --list"
             '';
           };
         }

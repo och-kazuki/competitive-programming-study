@@ -23,7 +23,7 @@ enter() {
   local flake="$2"
   (
     cd "$cwd"
-    nix develop "$flake" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUNCPP=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v runcpp)" "$CPLUS_INCLUDE_PATH"'
+    nix develop "$flake" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUN=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v run)" "$CPLUS_INCLUDE_PATH"'
   )
 }
 
@@ -34,8 +34,8 @@ expect_root() {
   got=$(printf '%s\n' "$out" | awk -F= '/^ROOT=/{print $2}' | tail -n 1)
   local venv
   venv=$(printf '%s\n' "$out" | awk -F= '/^VENV=/{print $2}' | tail -n 1)
-  local runcpp
-  runcpp=$(printf '%s\n' "$out" | awk -F= '/^RUNCPP=/{print $2}' | tail -n 1)
+  local run_bin
+  run_bin=$(printf '%s\n' "$out" | awk -F= '/^RUN=/{print $2}' | tail -n 1)
   local cplus
   cplus=$(printf '%s\n' "$out" | awk -F= '/^CPLUS=/{print $2}' | tail -n 1)
   if [[ "$got" != "$CP_PROJECT_ROOT" ]]; then
@@ -47,8 +47,8 @@ expect_root() {
     echo "$label: .venv が $venv です" >&2
     exit 1
   fi
-  if [[ "$runcpp" != "$CP_PROJECT_ROOT/scripts/runcpp" ]]; then
-    echo "$label: runcpp が $runcpp です" >&2
+  if [[ "$run_bin" != "$CP_PROJECT_ROOT/scripts/run" ]]; then
+    echo "$label: run が $run_bin です" >&2
     exit 1
   fi
   case "$cplus" in
@@ -73,5 +73,5 @@ expect_root "relative" "$(enter "$subdir" "../../..")"
 echo "== git が使えないときは flake.nix をたどる =="
 expect_root "walk" "$(
   cd "$subdir"
-  GIT_DIR=/nonexistent nix develop "$CP_PROJECT_ROOT" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUNCPP=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v runcpp)" "$CPLUS_INCLUDE_PATH"'
+  GIT_DIR=/nonexistent nix develop "$CP_PROJECT_ROOT" --command bash -c 'printf "ROOT=%s\nVENV=%s\nRUN=%s\nCPLUS=%s\n" "$CP_PROJECT_ROOT" "$UV_PROJECT_ENVIRONMENT" "$(command -v run)" "$CPLUS_INCLUDE_PATH"'
 )"

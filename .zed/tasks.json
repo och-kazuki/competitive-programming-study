@@ -1,71 +1,44 @@
 [
   {
-    "label": "C++: 開いているファイルを実行",
+    "label": "開いているファイルを実行",
     "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runcpp", "$ZED_FILE"],
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "run", "$ZED_FILE"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": true,
     "reveal": "always",
     "save": "current"
   },
   {
-    "label": "C++: 開いているファイルを通常ビルドで実行",
+    "label": "開いているファイルを通常ビルドで実行",
     "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "runcpp-release", "$ZED_FILE"],
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "run-release", "$ZED_FILE"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": true,
     "reveal": "always",
     "save": "current"
   },
   {
-    "label": "Python: 開いているファイルを実行",
+    "label": "このフォルダの a.cpp を実行",
     "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runpy", "$ZED_FILE"],
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "run", "$ZED_DIRNAME/a.cpp"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": true,
     "reveal": "always",
     "save": "current"
   },
   {
-    "label": "C++: このフォルダの a.cpp を実行",
+    "label": "oj: サンプルテスト",
     "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runcpp", "$ZED_DIRNAME/a.cpp"],
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj", "$ZED_DIRNAME"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": true,
     "reveal": "always",
     "save": "current"
   },
   {
-    "label": "Python: このフォルダの a.py を実行",
+    "label": "oj: サンプルテスト (通常ビルド)",
     "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "runpy", "$ZED_DIRNAME/a.py"],
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "use_new_terminal": true,
-    "reveal": "always",
-    "save": "current"
-  },
-  {
-    "label": "oj: サンプルテスト (C++)",
-    "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-cpp", "$ZED_DIRNAME"],
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "use_new_terminal": true,
-    "reveal": "always",
-    "save": "current"
-  },
-  {
-    "label": "oj: サンプルテスト (C++ 通常ビルド)",
-    "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-cpp-release", "$ZED_DIRNAME"],
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "use_new_terminal": true,
-    "reveal": "always",
-    "save": "current"
-  },
-  {
-    "label": "oj: サンプルテスト (Python)",
-    "command": "nix",
-    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-py", "$ZED_DIRNAME"],
+    "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "oj-release", "$ZED_DIRNAME"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": true,
     "reveal": "always",
@@ -83,7 +56,7 @@
     "reveal": "always"
   },
   {
-    "label": "C++: 提出用コードをコピー",
+    "label": "提出用コードをコピー",
     "command": "nix",
     "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "copy", "$ZED_FILE"],
     "cwd": "$ZED_WORKTREE_ROOT",
@@ -92,7 +65,7 @@
     "save": "current"
   },
   {
-    "label": "C++: 提出用ファイルを作る",
+    "label": "提出用ファイルを作る",
     "command": "nix",
     "args": ["develop", "$ZED_WORKTREE_ROOT", "-c", "just", "submit-file", "$ZED_DIRNAME"],
     "cwd": "$ZED_WORKTREE_ROOT",

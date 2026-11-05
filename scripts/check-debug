@@ -84,7 +84,7 @@ if grep -q 'a =' "$tmpdir/show.out"; then
   exit 1
 fi
 if command -v oj >/dev/null 2>&1; then
-  CP_CXX_MODE=debug bash "$root/scripts/oj-test" cpp "$show" >"$tmpdir/oj.out"
+  CP_CXX_MODE=debug bash "$root/scripts/oj-test" "$show" >"$tmpdir/oj.out"
   grep -q 'AC' "$tmpdir/oj.out"
 else
   echo "oj が無いのでサンプル判定は飛ばします"

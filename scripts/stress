@@ -101,7 +101,11 @@ run_prog() {
   if [[ "$kind" == cpp ]]; then
     python3 "$work/run.py" "$limit" "$stdout" "$stderr" "$work/$name" <"$input"
   else
-    python3 "$work/run.py" "$limit" "$stdout" "$stderr" "$python_bin" "$dir/$name.py" <"$input"
+    local py_base="$name"
+    if [[ "$name" == sol ]]; then
+      py_base=a
+    fi
+    python3 "$work/run.py" "$limit" "$stdout" "$stderr" "$python_bin" "$dir/$py_base.py" <"$input"
   fi
 }
 

@@ -26,7 +26,6 @@
         "python": {
           "pythonPath": ".venv/bin/python"
         },
-        "basedpyright.analysis.extraPaths": ["library/python"],
         "basedpyright.analysis.diagnosticMode": "workspace"
       }
     }

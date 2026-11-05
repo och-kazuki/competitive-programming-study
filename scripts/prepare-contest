@@ -124,9 +124,6 @@ install_templates() {
   if [[ ! -e "$dest/a.cpp" ]]; then
     cp "$root/templates/a.cpp" "$dest/a.cpp"
   fi
-  if [[ ! -e "$dest/a.py" ]]; then
-    cp "$root/templates/a.py" "$dest/a.py"
-  fi
 }
 
 list_file="$(mktemp)"

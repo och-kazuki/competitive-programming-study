@@ -33,9 +33,6 @@ if "basedpyright" not in python_servers:
 if "clangd" not in settings["languages"]["C++"]["language_servers"]:
     sys.exit("C++ の language server に clangd がありません")
 
-extra = settings["lsp"]["basedpyright"]["settings"]["basedpyright.analysis.extraPaths"]
-if "library/python" not in extra:
-    sys.exit("basedpyright の extraPaths に library/python がありません")
 if settings["lsp"]["basedpyright"]["settings"]["python"]["pythonPath"] != ".venv/bin/python":
     sys.exit("Python のインタプリタが .venv/bin/python ではありません")
 
@@ -46,17 +43,14 @@ if "-DLOCAL" not in clangd or "-std=gnu++20" not in clangd:
     sys.exit(".clangd に -DLOCAL または -std=gnu++20 がありません")
 
 required = [
-    "C++: 開いているファイルを実行",
-    "C++: 開いているファイルを通常ビルドで実行",
-    "Python: 開いているファイルを実行",
-    "C++: このフォルダの a.cpp を実行",
-    "Python: このフォルダの a.py を実行",
-    "oj: サンプルテスト (C++)",
-    "oj: サンプルテスト (C++ 通常ビルド)",
-    "oj: サンプルテスト (Python)",
+    "開いているファイルを実行",
+    "開いているファイルを通常ビルドで実行",
+    "このフォルダの a.cpp を実行",
+    "oj: サンプルテスト",
+    "oj: サンプルテスト (通常ビルド)",
     "コンテストを準備",
-    "C++: 提出用コードをコピー",
-    "C++: 提出用ファイルを作る",
+    "提出用コードをコピー",
+    "提出用ファイルを作る",
     "ストレステスト",
     "ストレステストのひな形を置く",
     "環境ファイルを更新",
