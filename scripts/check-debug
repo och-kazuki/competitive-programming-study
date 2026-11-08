@@ -90,7 +90,7 @@ else
   echo "oj が無いのでサンプル判定は飛ばします"
 fi
 
-echo "== 提出前コンパイルはデバッグフラグを付けない =="
+echo "== 提出用コピーは g++ を起動しない =="
 real_gxx=$(command -v g++)
 mkdir -p "$tmpdir/bin"
 cat >"$tmpdir/bin/g++" <<'EOF'
@@ -113,9 +113,12 @@ PATH="$tmpdir/bin:$PATH" \
   CP_CLIPBOARD_CMD="$tmpdir/clip" \
   CP_CLIP_SINK="$tmpdir/sink" \
   bash "$root/scripts/copy-submit" "$root/templates/a.cpp" >/dev/null
-if grep -q 'fsanitize' "$tmpdir/gxx.log" || grep -q 'DLOCAL' "$tmpdir/gxx.log"; then
-  echo "提出前コンパイルにデバッグフラグが入っています" >&2
+if [[ -s "$tmpdir/gxx.log" ]]; then
+  echo "提出用コピーが g++ を起動しました" >&2
   cat "$tmpdir/gxx.log" >&2
   exit 1
 fi
-grep -q -- '-O2' "$tmpdir/gxx.log"
+if [[ ! -s "$tmpdir/sink" ]]; then
+  echo "提出用コピーがクリップボードへ渡りませんでした" >&2
+  exit 1
+fi

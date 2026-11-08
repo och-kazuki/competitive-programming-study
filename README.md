@@ -200,7 +200,7 @@ just oj-release
 CP_CXX_MODE=release run
 ```
 
-サニタイザは Linux と WSL2 で使います。macOS では Nix の g++ が AddressSanitizer をリンクできないことがあり、そのときは `CP_CXX_MODE=release` にします。`just copy` と `just submit-file` は通常ビルドのままなので、提出物にサニタイザは入りません。
+サニタイザは Linux と WSL2 で使います。macOS では Nix の g++ が AddressSanitizer をリンクできないことがあり、そのときは `CP_CXX_MODE=release` にします。`just copy` は展開したソースをコピーするだけなので、サニタイザは付きません。
 
 手で足すときは `test/sample-1.in` と `test/sample-1.out` です。Zed のタスク「oj: サンプルテスト」は、開いているファイルのフォルダをテストします。通常ビルドのタスクは「oj: サンプルテスト (通常ビルド)」です。
 
@@ -230,7 +230,7 @@ cd work/abc400/a
 just copy
 ```
 
-展開結果がコンパイルできるときだけクリップボードを書き換え、「コピーしました（N行）」と表示します。失敗したときはクリップボードを変えません。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。`SHOW` は `-DLOCAL` を付けたときだけ標準エラーへ出ます。提出物にはその分岐が残りますが、ジャッジは `LOCAL` を定義しないのでデバッグ出力は出ません。AtCoder Library を使うときは `a.cpp` に次を書きます。
+展開したコードをクリップボードへコピーし、「コピーしました（N行）」と表示します。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。`SHOW` は `-DLOCAL` を付けたときだけ標準エラーへ出ます。提出物にはその分岐が残りますが、ジャッジは `LOCAL` を定義しないのでデバッグ出力は出ません。AtCoder Library を使うときは `a.cpp` に次を書きます。
 
 ```cpp
 #include <atcoder/dsu>
