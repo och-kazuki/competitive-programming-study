@@ -114,7 +114,7 @@ FOR_R(i, l, r);     // r - 1 から l
 scripts/cp-gxx -DLOCAL -o /tmp/a work/abc400/a/a.cpp
 ```
 
-`-std=c++17` を後ろに付けると、その標準で上書きできます。通常の `run` と `just copy` は `gnu++20` です。
+`-std=c++17` を後ろに付けると、その標準で上書きできます。通常の `run` は `gnu++20` です。
 
 ```sh
 scripts/cp-gxx -std=c++17 -DLOCAL -o /tmp/a work/abc400/a/a.cpp
