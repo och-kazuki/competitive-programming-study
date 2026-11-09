@@ -60,6 +60,10 @@ submit-file dir=".":
 copy target=".":
     "{{root}}/scripts/copy-submit" "{{target}}"
 
+# Library Checker で verify/ を検証する。ネットワークが要る。
+verify:
+    "{{root}}/scripts/verify-library"
+
 # テンプレート、ライブラリ、ruff、oj、basedpyright を確認する
 check:
     "{{root}}/scripts/check"

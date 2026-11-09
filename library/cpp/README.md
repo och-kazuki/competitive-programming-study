@@ -104,6 +104,87 @@ FOR_R(i, l, r);     // r - 1 から l
 
 定数 `inf` と `INF` もあります。
 
+## 二次元累積和
+
+`Cumsum2D` は、半開矩形 `[y1, y2) × [x1, x2)` の和を返します。
+
+```cpp
+#include "library/cpp/cumsum2d.hpp"
+
+vvc<ll> a{{1, 2}, {3, 4}};
+Cumsum2D cs(a);
+cs.sum(0, 0, 2, 2);  // 10
+```
+
+## いもす法
+
+`Imos1D` と `Imos2D` は、半開区間へ加算してから `build` します。
+
+```cpp
+#include "library/cpp/imos.hpp"
+
+Imos1D im(5);
+im.add(1, 4, 3);
+im.build();  // {0, 3, 3, 3, 0}
+
+Imos2D im2(2, 2);
+im2.add(0, 0, 2, 1, 1);
+im2.build();
+```
+
+## 座標圧縮
+
+`build` のあと、`id` はソートして重複を消した列での `lower_bound` の位置です。
+
+```cpp
+#include "library/cpp/compress.hpp"
+
+Compress<ll> cp(vc<ll>{3, 1, 3});
+cp.id(1);  // 0
+cp.id(3);  // 1
+```
+
+## 素数・約数
+
+`LinearSieve` は最小素因数を持ちます。`primes_upto` は大きな上限でも区間に分けて素数を列挙します。`factorize` は 64 ビット整数を `{素数, 指数}` に分解し、`divisors` はその約数を昇順で返します。
+
+```cpp
+#include "library/cpp/sieve.hpp"
+
+LinearSieve sv(100);
+sv.is_prime(97);
+factorize(12);  // {{2, 2}, {3, 1}}
+divisors(12);   // {1, 2, 3, 4, 6, 12}
+```
+
+## 二項係数
+
+`Binomial<Mint>` は階乗と逆元を前計算します。`Mint` には AtCoder Library の `modint998244353` や `dynamic_modint` を渡せます。
+
+```cpp
+#include "library/cpp/binomial.hpp"
+
+using mint = atcoder::modint998244353;
+Binomial<mint> binom(1000);
+binom.C(10, 3);
+```
+
+## 最短路
+
+`dijkstra` の辺の重みは 0 以上です。`bfs01` の重みは 0 か 1 です。届かない頂点の距離は `INF` で、`parent` は最短路の手前の頂点です。
+
+```cpp
+#include "library/cpp/dijkstra.hpp"
+#include "library/cpp/bfs01.hpp"
+
+vc<vc<pi>> g(3);
+g[0].push_back({1, 2});
+g[1].push_back({2, 0});
+auto res = dijkstra(g, 0);
+res.dist[2];  // 2
+bfs01(g, 0);
+```
+
 グリッドの `dx` / `dy`（4 近傍・8 近傍）と範囲外判定 `out_grid` は、このヘッダにはありません。Zed のスニペット `grid4`、`grid8`、`outgrid`（`snippets/zed/c++.json`）で、必要な問題の `a.cpp` に展開します。`x` は列、`y` は行です。`out_grid` は `main` の外に置き、`grid4` と `grid8` はどちらか片方だけを使います。入れ方と置く場所はルートの [README](../../README.md) の「C++ のスニペット」です。
 
 ## デバッグ

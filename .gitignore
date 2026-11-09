@@ -27,3 +27,6 @@ submit.cpp
 
 # コンテスト中の作業ファイル。テンプレートから just new で作る。
 /work/
+
+# competitive-verifier の取得済みテスト
+.competitive-verifier/

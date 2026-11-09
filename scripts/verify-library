@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# verify/ の Library Checker 問題を competitive-verifier で解く。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "$root"
+
+resolved="$root/.competitive-verifier/files.json"
+mkdir -p "$root/.competitive-verifier"
+uv run --with competitive-verifier competitive-verifier oj-resolve \
+  --config "$root/verify/config.toml" \
+  --include verify \
+  --exclude tests \
+  >"$resolved"
+uv run --with competitive-verifier competitive-verifier verify \
+  --verify-json "$resolved" \
+  --check-error \
+  --output "$root/.competitive-verifier/result.json"
