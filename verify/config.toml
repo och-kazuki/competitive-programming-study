@@ -1,0 +1,6 @@
+[languages.cpp]
+read_macros = false
+
+[[languages.cpp.environments]]
+CXX = "bash"
+CXXFLAGS = ["scripts/verify-cxx"]

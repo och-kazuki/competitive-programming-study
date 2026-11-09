@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# competitive-verifier から渡された引数の前に、このリポジトリのフラグを付ける。
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -z "${AC_LIBRARY_INCLUDE:-}" ]]; then
+  echo "AC_LIBRARY_INCLUDE が未設定です。nix develop 内で実行してください。" >&2
+  exit 1
+fi
+
+exec g++ -std=gnu++17 -O2 -Wall -Wextra -I "$root" -isystem "$AC_LIBRARY_INCLUDE" "$@"

@@ -61,6 +61,29 @@ PY
 g++ -std=gnu++20 -O2 -Wall -Wextra -o "$tmpdir/bundled" "$bundled"
 "$tmpdir/bundled"
 
+lib_src="$tmpdir/with-lib.cpp"
+cat >"$lib_src" <<'EOF'
+#include "library/cpp/dijkstra.hpp"
+#include "library/cpp/binomial.hpp"
+int main() { return 0; }
+EOF
+lib_bundled="$tmpdir/with-lib-bundled.cpp"
+python3 "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" -I "$CP_PROJECT_ROOT" "$lib_src" >"$lib_bundled"
+python3 - "$lib_bundled" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+if '#include "library/' in text:
+    sys.exit("ライブラリの展開後にローカル include が残っています")
+if "#include <atcoder/modint.hpp>" not in text:
+    sys.exit("AtCoder Library の include が展開されています")
+needle = "// Repository: https://github.com/och-kazuki/competitive-programming-study"
+count = sum(1 for line in text.splitlines() if line == needle)
+if count != 1:
+    sys.exit(f"出典コメント（Repository）が{count}回です")
+PY
+g++ -std=gnu++20 -O2 -Wall -Wextra -isystem "$AC_LIBRARY_INCLUDE" -o "$tmpdir/with-lib" "$lib_bundled"
+
 echo "== デバッグビルド =="
 bash "$CP_PROJECT_ROOT/scripts/check-debug"
 
