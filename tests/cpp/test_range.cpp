@@ -1,6 +1,6 @@
-#include "library/cpp/compress.hpp"
-#include "library/cpp/cumsum2d.hpp"
-#include "library/cpp/imos.hpp"
+#include "library/cpp/range/compress/compress.hpp"
+#include "library/cpp/range/cumsum2d/cumsum2d.hpp"
+#include "library/cpp/range/imos/imos.hpp"
 
 #include <cstdio>
 #include <random>

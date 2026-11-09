@@ -24,6 +24,9 @@ bash "$cxx" -o "$tmpdir/template" "$CP_PROJECT_ROOT/templates/a.cpp"
 echo "== C++ テンプレート詳細 =="
 bash "$CP_PROJECT_ROOT/scripts/check-template"
 
+echo "== ライブラリ README の使用例 =="
+bash "$CP_PROJECT_ROOT/scripts/check-library-readme"
+
 echo "== C++ ライブラリテスト =="
 shopt -s nullglob
 tests=("$CP_PROJECT_ROOT"/tests/cpp/*.cpp)
@@ -63,8 +66,8 @@ g++ -std=gnu++20 -O2 -Wall -Wextra -o "$tmpdir/bundled" "$bundled"
 
 lib_src="$tmpdir/with-lib.cpp"
 cat >"$lib_src" <<'EOF'
-#include "library/cpp/dijkstra.hpp"
-#include "library/cpp/binomial.hpp"
+#include "library/cpp/graph/dijkstra/dijkstra.hpp"
+#include "library/cpp/math/binomial/binomial.hpp"
 int main() { return 0; }
 EOF
 lib_bundled="$tmpdir/with-lib-bundled.cpp"
