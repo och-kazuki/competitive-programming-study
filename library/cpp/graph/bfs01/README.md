@@ -25,26 +25,52 @@ vi bfs01(const vc<vc<pi>> &g, int s);
 
 ## 計算量と制約
 
-頂点数 `n`、辺数 `m` として `O(n + m)`。各頂点は距離が短くなったときだけキューに入る。グリッドなら、マス数と「上下左右へ進む」辺の本数がこの `n` と `m` になる。
+頂点数 `N`、辺数 `M` として `O(N + M)`。各頂点は距離が短くなったときだけキューに入る。グリッドなら、マス数を `N`、上下左右の移動を `M` 本の辺とみなす。
 
 ## 使用例
 
-`0` から `1` へ重み `0`、`1` から `2` へ重み `1`。`0` から `2` への距離は `1`。
+頂点数 `N`、辺数 `M`、始点 `S`、終点 `T` を読む。辺は 1 始まりの `u v w` で、`w` は `0` か `1`。`T` への距離を出す。
+
+入力形式:
+
+```text
+N M S T
+u_1 v_1 w_1
+...
+u_M v_M w_M
+```
 
 ```cpp
 #include "library/cpp/graph/bfs01/bfs01.hpp"
 
 int main() {
-  vc<vc<pi>> g(3);
-  g[0].push_back({1, 0});
-  g[1].push_back({2, 1});
-  auto dist = bfs01(g, 0);
-  print(dist[2]);
+  int N, M, S, T;
+  cin >> N >> M >> S >> T;
+  S--;
+  T--;
+  vc<vc<pi>> G(N);
+  for (int i = 0; i < M; i++) {
+    int u, v;
+    ll w;
+    cin >> u >> v >> w;
+    u--;
+    v--;
+    G[u].push_back({v, w});
+  }
+  print(bfs01(G, S)[T]);
   return 0;
 }
 ```
 
-出力:
+入力例:
+
+```text
+3 2 1 3
+1 2 0
+2 3 1
+```
+
+出力例:
 
 ```text
 1

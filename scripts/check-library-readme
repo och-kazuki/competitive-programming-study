@@ -27,19 +27,24 @@ for readme in sorted((root / "library/cpp").rglob("README.md")):
     for i, (lang, body) in enumerate(blocks):
         if lang != "cpp" or "int main(" not in body:
             continue
-        expected = None
+        texts = []
         for nxt_lang, nxt_body in blocks[i + 1 :]:
             if nxt_lang == "cpp":
                 break
             if nxt_lang == "text":
-                expected = nxt_body
-                break
+                texts.append(nxt_body)
+        if len(texts) >= 2:
+            stdin, expected = texts[-2], texts[-1]
+        elif len(texts) == 1:
+            stdin, expected = "", texts[0]
+        else:
+            stdin, expected = "", ""
         (out / f"ex{count}.cpp").write_text(
             body if body.endswith("\n") else body + "\n", encoding="utf-8"
         )
-        exp = expected if expected is not None else ""
-        if exp and not exp.endswith("\n"):
-            exp += "\n"
+        inn = stdin if not stdin or stdin.endswith("\n") else stdin + "\n"
+        (out / f"ex{count}.in").write_text(inn, encoding="utf-8")
+        exp = expected if not expected or expected.endswith("\n") else expected + "\n"
         (out / f"ex{count}.out").write_text(exp, encoding="utf-8")
         (out / f"ex{count}.name").write_text(str(readme.relative_to(root)), encoding="utf-8")
         count += 1
@@ -56,7 +61,7 @@ for src in "$work"/ex*.cpp; do
   name=$(cat "$base.name")
   echo "-- $name"
   bash "$cxx" -Werror -o "$base.bin" "$src"
-  got=$("$base.bin")
+  got=$("$base.bin" <"$base.in")
   want=$(cat "$base.out")
   if [[ "$got" != "$want" ]]; then
     echo "使用例の出力が違います: $name" >&2
