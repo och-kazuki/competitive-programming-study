@@ -35,24 +35,39 @@ struct Binomial {
 
 ## 計算量と制約
 
-`build(n)` は `O(n)`。クエリは `O(1)`。`n` が `10^7` なら、`Mint` が 4 バイトとして配列2本で約 80 MB。法は素数であること。`fact[n].inv()` は、法と `n!` が互いに素なときに正しく、素数法で `n < 法` なら満たされる。
+`build(N)` は `O(N)`。質問 `Q` 回は `O(Q)`。`N` が `10^7` なら、`Mint` が 4 バイトとして配列 2 本で約 80 MB。法 `P` は素数であること。`fact[N].inv()` は、`P` と `N!` が互いに素なときに正しく、`N < P` なら満たされる。
 
 ## 使用例
 
-`998244353` で `C(5, 2)` を求める。値は `10`。
+素数 `P` と `N`, `K` を読み、`C(N, K) mod P` を出す。`N` まで前計算する。
+
+入力形式:
+
+```text
+P N K
+```
 
 ```cpp
 #include "library/cpp/math/binomial/binomial.hpp"
 
 int main() {
-  using mint = atcoder::modint998244353;
-  Binomial<mint> binom(5);
-  print(binom.C(5, 2).val());
+  int P, N, K;
+  cin >> P >> N >> K;
+  using mint = atcoder::dynamic_modint<0>;
+  mint::set_mod(P);
+  Binomial<mint> binom(N);
+  print(binom.C(N, K).val());
   return 0;
 }
 ```
 
-出力:
+入力例:
+
+```text
+998244353 5 2
+```
+
+出力例:
 
 ```text
 10

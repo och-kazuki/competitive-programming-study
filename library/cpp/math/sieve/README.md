@@ -48,20 +48,34 @@ vc<u64> divisors(u64 n);
 
 ## 使用例
 
-`12` を素因数分解する。`12 = 2^2 * 3`。
+整数 `X` を読み、素因数 `P` と指数 `C` を昇順に 1 行ずつ出す。`X = 1` のときは何も出さない。
+
+入力形式:
+
+```text
+X
+```
 
 ```cpp
 #include "library/cpp/math/sieve/sieve.hpp"
 
 int main() {
-  for (auto [p, c] : factorize(12)) {
-    print(p, c);
+  u64 X;
+  cin >> X;
+  for (auto [P, C] : factorize(X)) {
+    print(P, C);
   }
   return 0;
 }
 ```
 
-出力:
+入力例:
+
+```text
+12
+```
+
+出力例:
 
 ```text
 2 2

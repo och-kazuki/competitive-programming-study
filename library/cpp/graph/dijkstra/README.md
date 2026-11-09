@@ -31,31 +31,62 @@ Dijkstra dijkstra(const vc<vc<pi>> &g, int s);
 
 ## 計算量と制約
 
-頂点数 `n`、辺数 `m` として `O((n + m) log n)`。ヒープに同じ頂点が複数回入ることがある。`n` と `m` がそれぞれ `5 * 10^5` 程度までを想定する。距離の和が `INF` 以上になると、届かない頂点と区別できない。重みの合計が `10^18` に近いグラフでは、`INF` を問題に合わせて大きくする。
+頂点数 `N`、辺数 `M` として `O((N + M) log N)`。ヒープに同じ頂点が複数回入ることがある。`N` と `M` がそれぞれ `5 * 10^5` 程度までを想定する。距離の和が `INF` 以上になると、届かない頂点と区別できない。重み `w` の合計が `10^18` に近いグラフでは、`INF` を問題に合わせて大きくする。
 
 ## 使用例
 
-頂点 `0` から `1` へ重み `2`、`1` から `2` へ重み `3`。`0` から `2` への距離は `5`。
+頂点数 `N`、辺数 `M`、始点 `S`、終点 `T` を読む。辺は 1 始まりの `u v w`（`u` から `v` へ重み `w`）。`T` への距離と、直前の頂点（1 始まり。届かなければ `-1`）を出す。
+
+入力形式:
+
+```text
+N M S T
+u_1 v_1 w_1
+...
+u_M v_M w_M
+```
 
 ```cpp
 #include "library/cpp/graph/dijkstra/dijkstra.hpp"
 
 int main() {
-  vc<vc<pi>> g(3);
-  g[0].push_back({1, 2});
-  g[1].push_back({2, 3});
-  auto res = dijkstra(g, 0);
-  print(res.dist[2]);
-  print(res.parent[2]);
+  int N, M, S, T;
+  cin >> N >> M >> S >> T;
+  S--;
+  T--;
+  vc<vc<pi>> G(N);
+  for (int i = 0; i < M; i++) {
+    int u, v;
+    ll w;
+    cin >> u >> v >> w;
+    u--;
+    v--;
+    G[u].push_back({v, w});
+  }
+  auto res = dijkstra(G, S);
+  print(res.dist[T]);
+  if (res.parent[T] < 0) {
+    print(-1);
+  } else {
+    print(res.parent[T] + 1);
+  }
   return 0;
 }
 ```
 
-出力:
+入力例:
+
+```text
+3 2 1 3
+1 2 2
+2 3 3
+```
+
+出力例:
 
 ```text
 5
-1
+2
 ```
 
 ## こういう問題なら使う
