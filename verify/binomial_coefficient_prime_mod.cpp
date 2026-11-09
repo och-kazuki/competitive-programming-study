@@ -1,7 +1,7 @@
 // competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/binomial_coefficient_prime_mod
 #define PROBLEM "https://judge.yosupo.jp/problem/binomial_coefficient_prime_mod"
 
-#include "library/cpp/binomial.hpp"
+#include "library/cpp/math/binomial/binomial.hpp"
 
 int main() {
   int t, m;

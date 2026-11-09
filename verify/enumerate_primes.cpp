@@ -1,7 +1,7 @@
 // competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/enumerate_primes
 #define PROBLEM "https://judge.yosupo.jp/problem/enumerate_primes"
 
-#include "library/cpp/sieve.hpp"
+#include "library/cpp/math/sieve/sieve.hpp"
 
 int main() {
   int n, a, b;

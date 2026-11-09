@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# 各ライブラリ README の、main がある使用例をコンパイルして実行する。
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/require-dev-shell"
+
+root="${CP_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cxx="$root/scripts/cp-gxx"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+n=$(python3 - "$root" "$work" <<'PY'
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+out = pathlib.Path(sys.argv[2])
+fence = re.compile(r"```([A-Za-z0-9_+-]*)\n(.*?)```", re.S)
+count = 0
+for readme in sorted((root / "library/cpp").rglob("README.md")):
+    if readme.parent == root / "library/cpp":
+        continue
+    text = readme.read_text(encoding="utf-8")
+    blocks = [(lang, body) for lang, body in fence.findall(text)]
+    for i, (lang, body) in enumerate(blocks):
+        if lang != "cpp" or "int main(" not in body:
+            continue
+        expected = None
+        for nxt_lang, nxt_body in blocks[i + 1 :]:
+            if nxt_lang == "cpp":
+                break
+            if nxt_lang == "text":
+                expected = nxt_body
+                break
+        (out / f"ex{count}.cpp").write_text(
+            body if body.endswith("\n") else body + "\n", encoding="utf-8"
+        )
+        exp = expected if expected is not None else ""
+        if exp and not exp.endswith("\n"):
+            exp += "\n"
+        (out / f"ex{count}.out").write_text(exp, encoding="utf-8")
+        (out / f"ex{count}.name").write_text(str(readme.relative_to(root)), encoding="utf-8")
+        count += 1
+print(count)
+PY
+)
+if [[ "$n" -lt 7 ]]; then
+  echo "使用例が 7 件未満です: $n" >&2
+  exit 1
+fi
+
+for src in "$work"/ex*.cpp; do
+  base=${src%.cpp}
+  name=$(cat "$base.name")
+  echo "-- $name"
+  bash "$cxx" -Werror -o "$base.bin" "$src"
+  got=$("$base.bin")
+  want=$(cat "$base.out")
+  if [[ "$got" != "$want" ]]; then
+    echo "使用例の出力が違います: $name" >&2
+    printf 'got:\n%s\nwant:\n%s\n' "$got" "$want" >&2
+    exit 1
+  fi
+done

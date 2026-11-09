@@ -1,7 +1,7 @@
 // competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/shortest_path
 #define PROBLEM "https://judge.yosupo.jp/problem/shortest_path"
 
-#include "library/cpp/dijkstra.hpp"
+#include "library/cpp/graph/dijkstra/dijkstra.hpp"
 
 int main() {
   int n, m, s, t;

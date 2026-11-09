@@ -1,5 +1,5 @@
-#include "library/cpp/binomial.hpp"
-#include "library/cpp/sieve.hpp"
+#include "library/cpp/math/binomial/binomial.hpp"
+#include "library/cpp/math/sieve/sieve.hpp"
 
 #include <cstdio>
 #include <random>

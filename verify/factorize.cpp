@@ -1,7 +1,7 @@
 // competitive-verifier: PROBLEM https://judge.yosupo.jp/problem/factorize
 #define PROBLEM "https://judge.yosupo.jp/problem/factorize"
 
-#include "library/cpp/sieve.hpp"
+#include "library/cpp/math/sieve/sieve.hpp"
 
 int main() {
   int q;

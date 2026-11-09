@@ -1,5 +1,5 @@
-#include "library/cpp/bfs01.hpp"
-#include "library/cpp/dijkstra.hpp"
+#include "library/cpp/graph/bfs01/bfs01.hpp"
+#include "library/cpp/graph/dijkstra/dijkstra.hpp"
 
 #include <cstdio>
 #include <random>
