@@ -4,9 +4,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-// #include <atcoder/all>
-// using namespace atcoder;
-
 // vi は vector<ll>。vector<int> ではない。
 using ll = long long;
 using u32 = uint32_t;
@@ -18,16 +15,19 @@ template <class T> using vvc = vector<vector<T>>;
 template <class T> using pq_max = priority_queue<T>;
 template <class T> using pq_min = priority_queue<T, vector<T>, greater<T>>;
 
-constexpr int inf = 1000000007;
+// inf は int に収まる大きい値。法には使わない。
+constexpr int inf = (1 << 30) - 1;
 constexpr ll INF = ll(1) << 60;
 
+namespace {
 struct Init {
   Init() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
     cout << setprecision(16);
   }
-} init;
+} _cp_init;
+} // namespace
 
 template <class T> void read_one(T &x) { cin >> x; }
 
@@ -48,7 +48,6 @@ template <class... Args> void read(Args &...args) { (read_one(args), ...); }
 template <class T> void print_one(const T &x);
 template <class T, class U> void print_one(const pair<T, U> &p);
 template <class T> void print_one(const vector<T> &v);
-template <class T> void print_one(const vector<vector<T>> &v);
 
 template <class T> void print_one(const T &x) { cout << x; }
 
@@ -58,19 +57,19 @@ template <class T, class U> void print_one(const pair<T, U> &p) {
   print_one(p.second);
 }
 
-template <class T> void print_one(const vector<T> &v) {
-  for (ll i = 0; i < static_cast<ll>(v.size()); ++i) {
-    if (i) {
-      cout << ' ';
-    }
-    print_one(v[i]);
-  }
-}
+namespace cp_detail {
+template <class T> constexpr bool is_vector_v = false;
+template <class T, class Alloc> constexpr bool is_vector_v<vector<T, Alloc>> = true;
+} // namespace cp_detail
 
-template <class T> void print_one(const vector<vector<T>> &v) {
+template <class T> void print_one(const vector<T> &v) {
+  char sep = ' ';
+  if constexpr (cp_detail::is_vector_v<T>) {
+    sep = '\n';
+  }
   for (ll i = 0; i < static_cast<ll>(v.size()); ++i) {
     if (i) {
-      cout << '\n';
+      cout << sep;
     }
     print_one(v[i]);
   }
@@ -91,7 +90,7 @@ template <class T, class... Args> void print(const T &first, const Args &...rest
 inline void YES(bool cond) { print(cond ? "YES" : "NO"); }
 inline void Yes(bool cond) { print(cond ? "Yes" : "No"); }
 
-template <class T, class U> inline bool chmin(T &a, const U &b) {
+template <class T, class U> bool chmin(T &a, const U &b) {
   if (b < a) {
     a = static_cast<T>(b);
     return true;
@@ -99,7 +98,7 @@ template <class T, class U> inline bool chmin(T &a, const U &b) {
   return false;
 }
 
-template <class T, class U> inline bool chmax(T &a, const U &b) {
+template <class T, class U> bool chmax(T &a, const U &b) {
   if (a < b) {
     a = static_cast<T>(b);
     return true;
@@ -122,15 +121,6 @@ template <class A, class U> ll LB(const A &a, const U &x) {
 
 template <class A, class U> ll UB(const A &a, const U &x) {
   return static_cast<ll>(std::upper_bound(std::begin(a), std::end(a), x) - std::begin(a));
-}
-
-// 先頭は 0。s[i] は a[0] + ... + a[i - 1]。
-template <class T, class A> vc<T> cumsum(const A &a) {
-  vc<T> s(std::size(a) + 1);
-  for (ll i = 0; i < static_cast<ll>(std::size(a)); ++i) {
-    s[i + 1] = s[i] + static_cast<T>(a[i]);
-  }
-  return s;
 }
 
 // 添字は ll、範囲は半開区間。境界はループに入る前に一度だけ評価する。
@@ -161,10 +151,12 @@ template <class T, class A> vc<T> cumsum(const A &a) {
 #define CP_FOR_R3(i, l, r, uid)                                                                \
   for (ll CP_CAT(_cp_l_, uid) = static_cast<ll>(l), i = static_cast<ll>(r);                   \
        i-- > CP_CAT(_cp_l_, uid);)
+#define CP_FOR_R2(i, n, uid) CP_FOR_R3(i, 0, n, uid)
+#define CP_FOR_R1(n, uid) CP_FOR_R3(CP_CAT(_cp_i_, uid), 0, n, uid)
+
+#define FOR_R1(n) CP_FOR_R1(n, __COUNTER__)
+#define FOR_R2(i, n) CP_FOR_R2(i, n, __COUNTER__)
 #define FOR_R3(i, l, r) CP_FOR_R3(i, l, r, __COUNTER__)
-#define FOR_R2(i, n) FOR_R3(i, 0, n)
-#define FOR_R1_IMPL(n, uid) FOR_R3(CP_CAT(_cp_i_, uid), 0, n)
-#define FOR_R1(n) FOR_R1_IMPL(n, __COUNTER__)
 #define FOR_R(...) CP_OVERLOAD3(__VA_ARGS__, FOR_R3, FOR_R2, FOR_R1)(__VA_ARGS__)
 
 #define all(x) std::begin(x), std::end(x)
@@ -181,21 +173,14 @@ template <class T, class A> vc<T> cumsum(const A &a) {
 
 // マクロは文が二つになる。if の直後に書くときは波括弧で囲む。
 // 対話問題では print のあと、明示的に cout << flush; する。
-#define INT(...)                                                                               \
-  int __VA_ARGS__;                                                                             \
+#define CP_READ_AS(type, ...)                                                                  \
+  type __VA_ARGS__;                                                                            \
   read(__VA_ARGS__)
-#define LL(...)                                                                                \
-  ll __VA_ARGS__;                                                                              \
-  read(__VA_ARGS__)
-#define STR(...)                                                                               \
-  string __VA_ARGS__;                                                                          \
-  read(__VA_ARGS__)
-#define CHAR(...)                                                                              \
-  char __VA_ARGS__;                                                                            \
-  read(__VA_ARGS__)
-#define DBL(...)                                                                               \
-  double __VA_ARGS__;                                                                          \
-  read(__VA_ARGS__)
+#define INT(...) CP_READ_AS(int, __VA_ARGS__)
+#define LL(...) CP_READ_AS(ll, __VA_ARGS__)
+#define STR(...) CP_READ_AS(string, __VA_ARGS__)
+#define CHAR(...) CP_READ_AS(char, __VA_ARGS__)
+#define DBL(...) CP_READ_AS(double, __VA_ARGS__)
 #define VEC(type, name, n)                                                                     \
   vc<type> name(n);                                                                            \
   read(name)
@@ -204,92 +189,8 @@ template <class T, class A> vc<T> cumsum(const A &a) {
   read(name)
 
 #ifdef LOCAL
-
-template <class T> void show_write(const T &x);
-inline void show_write(bool x);
-inline void show_write(char x);
-inline void show_write(const char *x);
-inline void show_write(const string &x);
-template <class T, class U> void show_write(const pair<T, U> &p);
-template <class T> void show_write(const vector<T> &v);
-
-template <class T> void show_write(const T &x) { cerr << x; }
-inline void show_write(bool x) { cerr << (x ? "true" : "false"); }
-inline void show_write(char x) { cerr << '\'' << x << '\''; }
-inline void show_write(const char *x) { cerr << '"' << x << '"'; }
-inline void show_write(const string &x) { cerr << '"' << x << '"'; }
-
-template <class T, class U> void show_write(const pair<T, U> &p) {
-  cerr << '(';
-  show_write(p.first);
-  cerr << ", ";
-  show_write(p.second);
-  cerr << ')';
-}
-
-template <class T> void show_write(const vector<T> &v) {
-  cerr << '[';
-  for (ll i = 0; i < static_cast<ll>(v.size()); ++i) {
-    if (i) {
-      cerr << ", ";
-    }
-    show_write(v[i]);
-  }
-  cerr << ']';
-}
-
-inline string show_name(const char *begin, const char *end) {
-  while (begin < end && *begin == ' ') {
-    ++begin;
-  }
-  while (end > begin && *(end - 1) == ' ') {
-    --end;
-  }
-  return string(begin, end);
-}
-
-inline const char *show_split(const char *names) {
-  int depth = 0;
-  for (const char *p = names; *p; ++p) {
-    if (*p == '(' || *p == '[' || *p == '<') {
-      ++depth;
-    } else if (*p == ')' || *p == ']' || *p == '>') {
-      --depth;
-    } else if (*p == ',' && depth == 0) {
-      return p;
-    }
-  }
-  return names + strlen(names);
-}
-
-template <class T> void show_args(const char *names, const T &value) {
-  const char *end = show_split(names);
-  cerr << show_name(names, end) << " = ";
-  show_write(value);
-}
-
-template <class T, class... Args>
-void show_args(const char *names, const T &value, const Args &...rest) {
-  const char *comma = show_split(names);
-  cerr << show_name(names, comma) << " = ";
-  show_write(value);
-  cerr << ", ";
-  if (*comma == ',') {
-    ++comma;
-  }
-  show_args(comma, rest...);
-}
-
-#define SHOW(...)                                                                              \
-  do {                                                                                         \
-    cerr << '[' << __func__ << ':' << __LINE__ << "] ";                                       \
-    show_args(#__VA_ARGS__, __VA_ARGS__);                                                      \
-    cerr << '\n';                                                                              \
-  } while (0)
-
+#include "library/cpp/debug.hpp"
 #else
-
 // 引数は展開しない。
 #define SHOW(...) ((void)0)
-
 #endif

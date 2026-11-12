@@ -51,8 +51,8 @@ for readme in sorted((root / "library/cpp").rglob("README.md")):
 print(count)
 PY
 )
-if [[ "$n" -lt 7 ]]; then
-  echo "使用例が 7 件未満です: $n" >&2
+if [[ "$n" -lt 8 ]]; then
+  echo "使用例が 8 件未満です: $n" >&2
   exit 1
 fi
 

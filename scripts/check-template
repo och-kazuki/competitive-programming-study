@@ -85,6 +85,10 @@ if "using vi = vector<ll>;" not in text:
     sys.exit("テンプレートヘッダが展開されていません")
 if "#ifdef LOCAL" not in text or "#define SHOW(...)" not in text:
     sys.exit("LOCAL の分岐が展開されていません")
+if "void show_write" not in text:
+    sys.exit("debug.hpp が展開されていません")
+if text.count("#define SHOW(...) ((void)0)") != 1:
+    sys.exit("LOCAL が無いときの SHOW が一つではありません")
 if ".shrink_to_fit(" in text:
     sys.exit("shrink_to_fit を呼んでいます")
 PY

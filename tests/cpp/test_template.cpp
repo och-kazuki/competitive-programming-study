@@ -12,7 +12,11 @@ static void expect(bool ok, const char *msg) {
   }
 }
 
+int init = 1;
+
 static void test_types() {
+  static_assert(inf == (1 << 30) - 1, "inf");
+  static_assert(INF == (ll(1) << 60), "INF");
   static_assert(std::is_same<vi, vector<ll>>::value, "vi は vector<ll>");
   static_assert(std::is_same<u32, uint32_t>::value, "u32");
   static_assert(std::is_same<u64, uint64_t>::value, "u64");
@@ -27,6 +31,9 @@ static void test_types() {
   lo.push(3);
   expect(hi.top() == 3, "pq_max");
   expect(lo.top() == 1, "pq_min");
+  expect(init == 1, "init name");
+  init = 2;
+  expect(init == 2, "assign init");
 }
 
 static void test_io() {
@@ -56,6 +63,8 @@ static void test_io() {
 
   print(v);
   print(g);
+  vvc<vi> cube{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
+  print(cube);
   print(p);
   print();
   YES(true);
@@ -68,7 +77,7 @@ static void test_io() {
   cout.rdbuf(old_out);
 
   const string got = out.str();
-  const string want = "1 2 3\n1 2\n3 4\n9 8\n\nYES\nNO\nYes\nNo\n1 2 3\n";
+  const string want = "1 2 3\n1 2\n3 4\n1 2\n3 4\n5 6\n7 8\n9 8\n\nYES\nNO\nYes\nNo\n1 2 3\n";
   expect(got == want, "print");
   if (got != want) {
     std::fprintf(stderr, "got:\n%s\n", got.c_str());
@@ -135,9 +144,6 @@ static void test_helpers() {
 
   vi values{3, 1, 2};
   expect(SUM<ll>(values) == 6, "SUM");
-  vc<ll> prefix = cumsum<ll>(values);
-  expect(prefix == vc<ll>({0, 3, 4, 6}), "cumsum");
-  expect(cumsum<ll>(vi{}).size() == 1 && cumsum<ll>(vi{})[0] == 0, "cumsum empty");
 
   vi sorted{1, 2, 2, 4};
   expect(LB(sorted, 2) == 1, "LB");

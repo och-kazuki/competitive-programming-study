@@ -238,7 +238,7 @@ cd work/abc400/a
 just copy
 ```
 
-展開したコードをクリップボードへコピーし、「コピーしました（N行）」と表示します。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。`SHOW` は `-DLOCAL` を付けたときだけ標準エラーへ出ます。提出物にはその分岐が残りますが、ジャッジは `LOCAL` を定義しないのでデバッグ出力は出ません。AtCoder Library を使うときは `a.cpp` に次を書きます。
+展開したコードをクリップボードへコピーし、「コピーしました（N行）」と表示します。`#include <atcoder/...>` は展開しません。AtCoder のジャッジにライブラリがあるためです。ファイルに残すときは `just submit-file` です。`SHOW` は `-DLOCAL` を付けたときだけ標準エラーへ出ます。提出用に展開すると、`library/cpp/debug.hpp` の中身が `#ifdef LOCAL` の中に入ります。ジャッジは `LOCAL` を定義しないので、その部分はコンパイルされず、デバッグ出力は出ません。AtCoder Library を使うときは `a.cpp` に次を書きます。
 
 ```cpp
 #include <atcoder/dsu>
