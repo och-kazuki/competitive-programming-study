@@ -1,4 +1,5 @@
 #include "library/cpp/range/compress/compress.hpp"
+#include "library/cpp/range/cumsum/cumsum.hpp"
 #include "library/cpp/range/cumsum2d/cumsum2d.hpp"
 #include "library/cpp/range/imos/imos.hpp"
 
@@ -12,6 +13,16 @@ static void expect(bool ok, const char *msg) {
     std::fprintf(stderr, "fail: %s\n", msg);
     ++failures;
   }
+}
+
+static void test_cumsum1d() {
+  vi values{3, 1, 2};
+  vc<ll> prefix = cumsum<ll>(values);
+  expect(prefix == vc<ll>({0, 3, 4, 6}), "cumsum");
+  expect(prefix[3] - prefix[1] == 3, "cumsum [1, 3)");
+  expect(cumsum<ll>(vi{}).size() == 1 && cumsum<ll>(vi{})[0] == 0, "cumsum empty");
+  vc<int> narrow{1000000000, 1000000000};
+  expect(cumsum<ll>(narrow)[2] == 2000000000LL, "cumsum ll");
 }
 
 static void test_cumsum() {
@@ -91,6 +102,7 @@ static void test_compress() {
 }
 
 int main() {
+  test_cumsum1d();
   test_cumsum();
   test_imos();
   test_compress();

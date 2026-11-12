@@ -99,10 +99,9 @@ FOR_R(i, l, r);     // r - 1 から l
 - `chmin(a, b)` / `chmax(a, b)` は更新したら true を返します。
 - `SUM<T>(A)` は型 `T` の総和です。
 - `LB(A, x)` / `UB(A, x)` は、ソート済み配列での `lower_bound` / `upper_bound` の位置です。
-- `cumsum<T>(A)` は先頭に 0 を含む累積和です。
 - `UNIQUE(A)` はソートして重複を消します。並び順は変わり、`shrink_to_fit()` は呼びません。
-
-定数 `inf` と `INF` もあります。
+- `inf` は `(1 << 30) - 1` です。`int` に収まる大きい値で、法としては使いません。
+- `INF` は `1LL << 60` です。`ll` に収まる大きい値です。
 
 ## ライブラリ
 
@@ -110,6 +109,7 @@ FOR_R(i, l, r);     // r - 1 から l
 
 ### 区間・座標
 
+- [一次元累積和](range/cumsum/README.md): 数列の区間の和を前計算する。
 - [二次元累積和](range/cumsum2d/README.md): 長方形領域の和を前計算する。
 - [いもす法](range/imos/README.md): 区間や長方形への加算をまとめて各点の値にする。
 - [座標圧縮](range/compress/README.md): 大きい座標を、大小関係を保った順位に置き換える。
@@ -128,7 +128,7 @@ FOR_R(i, l, r);     // r - 1 から l
 
 ## デバッグ
 
-`SHOW(a, b)` は、`LOCAL` を定義してコンパイルしたときだけ、変数名と値、関数名、行番号を標準エラーへ出します。`pair`、`vector`、二次元配列も表示します。`LOCAL` が無いときは引数を評価しません。提出用の展開結果にもこの分岐が残るので、ジャッジではデバッグ出力は出ません。
+`SHOW(a, b)` は、`LOCAL` を定義してコンパイルしたときだけ、変数名と値、関数名、行番号を標準エラーへ出します。実装は [debug.hpp](debug.hpp) にあり、`template.hpp` が `LOCAL` のときだけ読みます。`pair`、`vector`、二次元配列も表示します。`LOCAL` が無いときは `SHOW` は何もせず、引数も評価しません。提出用に展開すると、`debug.hpp` の中身は `#ifdef LOCAL` の中に入ります。ジャッジは `LOCAL` を定義しないので、その部分はコンパイルされず、デバッグ出力は出ません。
 
 ```sh
 scripts/cp-gxx -DLOCAL -o /tmp/a work/abc400/a/a.cpp
