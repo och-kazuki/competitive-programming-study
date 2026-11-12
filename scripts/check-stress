@@ -11,7 +11,17 @@ fi
 
 root="$CP_PROJECT_ROOT"
 work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
+stream_pid=""
+cleanup() {
+  local status=$?
+  if [[ -n "$stream_pid" ]] && kill -0 "$stream_pid" 2>/dev/null; then
+    kill "$stream_pid" 2>/dev/null || true
+    wait "$stream_pid" 2>/dev/null || true
+  fi
+  rm -rf "$work"
+  exit "$status"
+}
+trap cleanup EXIT
 
 copy_case() {
   local name="$1"
@@ -23,7 +33,13 @@ copy_case() {
 echo "== 一致するストレステスト =="
 copy_case ok
 CP_STRESS_COUNT=20 bash "$root/scripts/stress" "$work/ok" >"$work/ok.out"
-grep -q '一致: 20 件' "$work/ok.out"
+{
+  for i in $(seq 1 20); do
+    printf 'Test %s -> OK\n' "$i"
+  done
+  printf '上限 20 回に達しました。一致: 20 件\n'
+} >"$work/ok.expected"
+cmp -s "$work/ok.expected" "$work/ok.out"
 [[ ! -e "$work/ok/test" ]]
 [[ ! -e "$work/ok/stress" ]]
 
@@ -34,6 +50,7 @@ CP_STRESS_COUNT=5 bash "$root/scripts/stress" "$work/bad" >"$work/bad.out" 2>"$w
 status=$?
 set -e
 [[ "$status" -eq 1 ]]
+[[ "$(cat "$work/bad.out")" == "Test 1 -> WA" ]]
 grep -q '不一致: seed=1' "$work/bad.err"
 [[ "$(cat "$work/bad/stress/1.in")" == "1" ]]
 [[ "$(cat "$work/bad/stress/1.naive.out")" == "1" ]]
@@ -49,6 +66,7 @@ CP_STRESS_COUNT=3 bash "$root/scripts/stress" "$work/crash" >"$work/crash.out" 2
 status=$?
 set -e
 [[ "$status" -eq 1 ]]
+[[ "$(cat "$work/crash.out")" == "Test 1 -> RE" ]]
 grep -q '実行時エラー: seed=1' "$work/crash.err"
 [[ -f "$work/crash/stress/1.in" ]]
 [[ -f "$work/crash/test/sample-1.out" ]]
@@ -60,6 +78,7 @@ CP_STRESS_TIMEOUT=0.4 CP_STRESS_COUNT=2 bash "$root/scripts/stress" "$work/slow"
 status=$?
 set -e
 [[ "$status" -eq 1 ]]
+[[ "$(cat "$work/slow.out")" == "Test 1 -> TLE" ]]
 grep -q 'タイムアウト: seed=1' "$work/slow.err"
 [[ -f "$work/slow/stress/1.in" ]]
 
@@ -87,6 +106,67 @@ PATH="$work/bin:$PATH" CP_GXX_LOG="$work/gxx.log" CP_REAL_GXX="$real_gxx" \
   CP_CXX_MODE=debug CP_STRESS_COUNT=1 bash "$root/scripts/stress" "$mode_dir" >/dev/null
 grep -q 'fsanitize' "$work/gxx.log"
 grep -q 'DLOCAL' "$work/gxx.log"
+
+echo "== 生成器の失敗 =="
+genfail="$work/genfail"
+mkdir -p "$genfail"
+cp "$root/tests/stress/ok/naive.cpp" "$root/tests/stress/ok/a.cpp" "$genfail/"
+printf 'import sys\nsys.exit(1)\n' >"$genfail/gen.py"
+set +e
+CP_STRESS_COUNT=3 bash "$root/scripts/stress" "$genfail" >"$work/genfail.out" 2>"$work/genfail.err"
+status=$?
+set -e
+[[ "$status" -eq 1 ]]
+[[ "$(cat "$work/genfail.out")" == "Test 1 -> GEN" ]]
+grep -q '生成器が失敗しました: seed=1' "$work/genfail.err"
+[[ ! -e "$genfail/stress" ]]
+[[ ! -e "$genfail/test" ]]
+
+echo "== 結果は1行ずつ届く =="
+stream="$work/stream"
+mkdir -p "$stream"
+cp "$root/tests/stress/ok/gen.py" "$root/tests/stress/ok/naive.cpp" "$stream/"
+cat >"$stream/a.cpp" <<'EOF'
+#include <unistd.h>
+#include <iostream>
+
+int main() {
+  long long value = 0;
+  std::cin >> value;
+  sleep(2);
+  std::cout << value << "\n";
+  return 0;
+}
+EOF
+: >"$work/stream.out"
+CP_STRESS_TIMEOUT=10 CP_STRESS_COUNT=2 bash "$root/scripts/stress" "$stream" >"$work/stream.out" 2>"$work/stream.err" &
+stream_pid=$!
+seen=0
+for _ in $(seq 1 150); do
+  if [[ -s "$work/stream.out" ]]; then
+    seen=1
+    break
+  fi
+  sleep 0.1
+done
+[[ "$seen" -eq 1 ]]
+if ! kill -0 "$stream_pid" 2>/dev/null; then
+  echo "最初の結果が出る時点でストレステストが終わっています" >&2
+  cat "$work/stream.err" >&2 || true
+  wait "$stream_pid" || true
+  stream_pid=""
+  exit 1
+fi
+[[ "$(head -n 1 "$work/stream.out")" == "Test 1 -> OK" ]]
+[[ "$(grep -c . "$work/stream.out")" -eq 1 ]]
+wait "$stream_pid"
+stream_pid=""
+{
+  printf 'Test 1 -> OK\n'
+  printf 'Test 2 -> OK\n'
+  printf '上限 2 回に達しました。一致: 2 件\n'
+} >"$work/stream.expected"
+cmp -s "$work/stream.expected" "$work/stream.out"
 
 echo "== 本解が a.cpp でなければ止まる =="
 missing="$work/no-solution"
