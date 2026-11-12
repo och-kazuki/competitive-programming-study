@@ -113,18 +113,22 @@ save_input() {
   cp "$work/input" "$dir/stress/$seed.in"
 }
 
+# bash の printf は1回ごとに fflush する。回数の途中でも、この1行がすぐ届く。
+verdict() {
+  printf 'Test %s -> %s\n' "$1" "$2"
+}
+
 seed=1
 while [[ "$seed" -le "$count" ]]; do
   if [[ "$gen_kind" == cpp ]]; then
-    if ! "$work/gen" "$seed" >"$work/input"; then
-      echo "生成器が失敗しました: seed=$seed" >&2
-      exit 1
-    fi
+    gen_cmd=("$work/gen" "$seed")
   else
-    if ! "$python_bin" "$dir/gen.py" "$seed" >"$work/input"; then
-      echo "生成器が失敗しました: seed=$seed" >&2
-      exit 1
-    fi
+    gen_cmd=("$python_bin" "$dir/gen.py" "$seed")
+  fi
+  if ! "${gen_cmd[@]}" >"$work/input"; then
+    verdict "$seed" GEN
+    echo "生成器が失敗しました: seed=$seed" >&2
+    exit 1
   fi
 
   set +e
@@ -135,12 +139,14 @@ while [[ "$seed" -le "$count" ]]; do
   set -e
 
   if [[ "$naive_status" -eq 124 || "$sol_status" -eq 124 ]]; then
+    verdict "$seed" TLE
     save_input "$seed"
     echo "タイムアウト: seed=$seed（制限 ${limit} 秒）" >&2
     echo "入力: $dir/stress/$seed.in" >&2
     exit 1
   fi
   if [[ "$naive_status" -ne 0 || "$sol_status" -ne 0 ]]; then
+    verdict "$seed" RE
     save_input "$seed"
     cp "$work/naive.err" "$dir/stress/$seed.naive.err" 2>/dev/null || true
     cp "$work/sol.err" "$dir/stress/$seed.sol.err" 2>/dev/null || true
@@ -156,6 +162,7 @@ while [[ "$seed" -le "$count" ]]; do
     exit 1
   fi
   if ! cmp -s "$work/naive.out" "$work/sol.out"; then
+    verdict "$seed" WA
     save_input "$seed"
     cp "$work/naive.out" "$dir/stress/$seed.naive.out"
     cp "$work/sol.out" "$dir/stress/$seed.sol.out"
@@ -170,7 +177,8 @@ while [[ "$seed" -le "$count" ]]; do
     echo "反例: $dir/test/sample-$sample.in" >&2
     exit 1
   fi
+  verdict "$seed" OK
   seed=$((seed + 1))
 done
 
-echo "一致: ${count} 件"
+echo "上限 ${count} 回に達しました。一致: ${count} 件"

@@ -215,7 +215,15 @@ just stress 100
 
 `just stress-init` は、無いときだけ `templates/gen.py` と `templates/naive.cpp` を今のディレクトリへコピーします。回数の既定は 100、1回の制限時間は 2 秒です。`CP_STRESS_TIMEOUT=1 just stress 50` のように変えられます。
 
-食い違ったときは `stress/<seed>.in`、`stress/<seed>.naive.out`、`stress/<seed>.sol.out` に入力と両方の出力を残し、愚直解の出力を `test/sample-N.out` として追加します。実行時エラーとタイムアウトでも止まり、入力を残します。愚直解が成功していれば、その入力と出力も `test/` に足すので、あとから `just oj` で同じケースを再実行できます。
+各回が終わるたびに、結果を1行ずつ出します。
+
+```text
+Test 1 -> OK
+Test 2 -> OK
+上限 100 回に達しました。一致: 100 件
+```
+
+食い違いは `Test N -> WA`、実行時エラーは `Test N -> RE`、制限時間を超えたときは `Test N -> TLE`、生成器が失敗したときは `Test N -> GEN` です。WA のときは、その行のあとに反例の場所を表示し、`stress/<seed>.in`、`stress/<seed>.naive.out`、`stress/<seed>.sol.out` に入力と両方の出力を残します。愚直解の出力は `test/sample-N.out` としても追加します。実行時エラーとタイムアウトでも止まり、入力を残します。愚直解が成功していれば、その入力と出力も `test/` に足すので、あとから `just oj` で同じケースを再実行できます。
 
 C++ の生成器・愚直解・本解は、既定で通常ビルド（`-O2`）です。100 回比べる処理をサニタイザ付きの `-O0` にすると遅くなり、出力の食い違い自体は通常ビルドでも見つかります。未定義動作で落ちる反例を探すときは `CP_CXX_MODE=debug just stress 20` にします。`run` の既定がデバッグでも、`just stress` は通常ビルドのままです。
 
