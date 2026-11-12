@@ -87,6 +87,42 @@ if count != 1:
 PY
 g++ -std=gnu++20 -O2 -Wall -Wextra -isystem "$AC_LIBRARY_INCLUDE" -o "$tmpdir/with-lib" "$lib_bundled"
 
+echo "== 再 include は空のマーカーを出さない =="
+cumsum_src="$tmpdir/with-cumsum.cpp"
+cat >"$cumsum_src" <<'EOF'
+#include "library/cpp/template.hpp"
+#include "library/cpp/range/cumsum/cumsum.hpp"
+int main() {
+  vc<ll> a{1, 2, 3};
+  vc<ll> s = cumsum<ll>(a);
+  return s.size() == 4 && s[3] == 6 ? 0 : 1;
+}
+EOF
+cumsum_bundled="$tmpdir/with-cumsum-bundled.cpp"
+python3 "$CP_PROJECT_ROOT/scripts/bundle_cpp.py" -I "$CP_PROJECT_ROOT" "$cumsum_src" >"$cumsum_bundled"
+python3 - "$cumsum_bundled" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+lines = text.splitlines()
+if '#include "library/' in text:
+    sys.exit("cumsum の展開後にローカル include が残っています")
+needle = "// Repository: https://github.com/och-kazuki/competitive-programming-study"
+count = sum(1 for line in lines if line == needle)
+if count != 1:
+    sys.exit(f"出典コメント（Repository）が{count}回です")
+begin = "// begin library/cpp/template.hpp"
+if sum(1 for line in lines if line == begin) != 1:
+    sys.exit("template.hpp の begin が1回ではありません")
+for prev, nxt in zip(lines, lines[1:]):
+    if prev.startswith("// begin ") and nxt == "// end " + prev.removeprefix("// begin "):
+        sys.exit(f"空の begin/end があります: {prev}")
+if "vc<T> cumsum" not in text:
+    sys.exit("cumsum の定義が展開されていません")
+PY
+g++ -std=gnu++20 -O2 -Wall -Wextra -Werror -o "$tmpdir/with-cumsum" "$cumsum_bundled"
+"$tmpdir/with-cumsum"
+
 echo "== デバッグビルド =="
 bash "$CP_PROJECT_ROOT/scripts/check-debug"
 

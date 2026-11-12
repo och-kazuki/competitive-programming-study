@@ -50,6 +50,9 @@ def expand(path: Path, include_dirs: list[Path], seen: set[Path]) -> str:
             chunks.append(line if line.endswith("\n") else f"{line}\n")
             continue
         included = resolve_include(name, path, include_dirs)
+        # 同じファイルは最初の1回だけ展開する。
+        if included in seen:
+            continue
         chunks.append(f"// begin {name}\n")
         nested = expand(included, include_dirs, seen)
         if nested and not nested.endswith("\n"):
